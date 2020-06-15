@@ -43,7 +43,9 @@ public class JJack extends Application {
 	private static ObservableList<JJackOutputPort> outputPorts;
 	private static List<JJackChannel> channels;
 	
-	public static void main(String[] args) {
+	@SuppressWarnings("deprecation")
+	@Override
+	public void start(Stage primaryStage) throws Exception {
 		inputPorts = FXCollections.observableArrayList();
 		outputPorts = FXCollections.observableArrayList();
 		channels = new ArrayList<>(DEFAULT_CHANNEL_COUNT);
@@ -52,15 +54,9 @@ public class JJack extends Application {
 			channels.add(new JJackChannel(i));
 		}
 		
-		Application.launch(args);
-	}
-	
-	@SuppressWarnings("deprecation")
-	@Override
-	public void start(Stage primaryStage) throws Exception {
 		stage = primaryStage;
 		
-		URL url = JJack.class.getResource("include/ui.fxml");
+		URL url = JJack.class.getResource("/include/ui.fxml");
 		if(url == null) url = new File("./include/ui.fxml").toURI().toURL();
 		
 		FXMLLoader l = new FXMLLoader(url);

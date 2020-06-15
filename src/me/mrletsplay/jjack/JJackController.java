@@ -63,7 +63,7 @@ public class JJackController {
     	
     	try {
 			JJackChannel ch = JJack.createChannel();
-	    	URL url = JJack.class.getResource("include/channel.fxml");
+	    	URL url = JJack.class.getResource("/include/channel.fxml");
 			if(url == null) url = new File("./include/channel.fxml").toURI().toURL();
 			FXMLLoader l = new FXMLLoader(url);
 			Parent pr = l.load(url.openStream());
