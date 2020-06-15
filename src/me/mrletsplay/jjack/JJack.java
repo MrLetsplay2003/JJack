@@ -24,6 +24,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import me.mrletsplay.jjack.channel.JJackChannel;
 import me.mrletsplay.jjack.port.JJackInputPort;
@@ -55,6 +56,11 @@ public class JJack extends Application {
 		}
 		
 		stage = primaryStage;
+		
+		URL iconURL = JJack.class.getResource("/include/icon.png");
+		if(iconURL == null) iconURL = new File("./include/icon.png").toURI().toURL();
+
+		stage.getIcons().add(new Image(iconURL.openStream()));
 		
 		URL url = JJack.class.getResource("/include/ui.fxml");
 		if(url == null) url = new File("./include/ui.fxml").toURI().toURL();
