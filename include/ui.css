@@ -1,0 +1,85 @@
+.volume-slider .axis .axis-tick-mark, .volume-slider .axis .axis-minor-tick-mark {
+	-fx-stroke: gray;
+}
+
+.volume-slider .axis {
+	-fx-tick-label-fill: white;
+}
+
+.volume-slider .track {
+	-fx-background-color: lightblue;
+	-fx-background-radius: 7px;
+	-fx-padding: 6px;
+}
+
+.volume-slider .thumb {
+	-fx-padding: 15px;
+	-fx-background-color: lightblue;
+	-fx-border-color: gray;
+	-fx-border-width: 2px;
+	-fx-border-radius: 50%;
+	-fx-background-radius: 50%;
+	-fx-opacity: 0.5;
+}
+
+.device-combo {
+	-fx-background-color: white;
+	-fx-background-radius: 0;
+}
+
+.device-combo .arrow-button {
+	-fx-background-radius: 0;
+}
+
+.device-combo .arrow-button .arrow {
+	-fx-background-color: #2f2f2f;
+}
+
+.device-combo .list-cell {
+	-fx-text-fill: #2f2f2f;
+}
+
+.device-combo .combo-box-popup .list-view .list-cell {
+	-fx-text-fill: #2f2f2f;
+}
+
+.device-combo .combo-box-popup .list-view .list-cell:focused, .device-combo .combo-box-popup .list-view .list-cell:hover {
+	-fx-background-color: lightblue;
+}
+
+.menu-bar {
+	-fx-background-color:  white;
+}
+
+.menu-bar .menu:showing, .menu-bar .menu:hover {
+	-fx-background-color: lightblue;
+}
+
+.menu-bar .menu .label {
+	-fx-text-fill: #2f2f2f;
+}
+
+.menu-bar .menu .menu-item:focused {
+	-fx-background-color: lightblue;
+}
+
+.volume-out-slider .track {
+	-fx-background-color: black;
+	-fx-background-radius: 0;
+}
+
+.volume-out-slider .thumb {
+	-fx-background-radius: 0;
+	-fx-background-color: red;
+	-fx-padding: 3.5px;
+}
+
+.remove-button {
+	-fx-background-color: white;
+	-fx-background-radius: 0;
+	-fx-text-fill: #2f2f2f;
+}
+
+#channel0 .remove-button, #channel1 .remove-button, #channel2 .remove-button, #channel3 .remove-button {
+	visibility: hidden;
+}
