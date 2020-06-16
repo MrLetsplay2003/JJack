@@ -54,37 +54,33 @@ public class JJackController {
 
     @FXML
     void addNewChannel(ActionEvent event) {
-    	addNewChannel();
+    	JJack.createChannel();
     }
     
-    public JJackChannel addNewChannel() {
+    void addChannel(JJackChannel channel) {
     	double oldW = JJack.getStage().getWidth();
     	JJack.getStage().setWidth(oldW + 175);
     	
     	try {
-			JJackChannel ch = JJack.createChannel();
 	    	URL url = JJack.class.getResource("/include/channel.fxml");
 			if(url == null) url = new File("./include/channel.fxml").toURI().toURL();
 			FXMLLoader l = new FXMLLoader(url);
 			Parent pr = l.load(url.openStream());
 			JJackChannelController ctrl = l.getController();
-			ctrl.setChannel(ch);
+			ctrl.setChannel(channel);
 			mainPane.getChildren().add(pr);
 			AnchorPane.setTopAnchor(pr, 10d);
 			AnchorPane.setLeftAnchor(pr, oldW - 10);
 			AnchorPane.setBottomAnchor(pr, 10d);
-			pr.setId("channel" + ch.getID());
-			return ch;
+			pr.setId("channel" + channel.getID());
     	}catch(Exception e) {
     		throw new FriendlyException(e);
     	}
     }
     
-    public void removeChannel(int channelID) {
+    void removeChannel(int channelID) {
     	double oldW = JJack.getStage().getWidth();
     	JJack.getStage().setWidth(oldW - 175);
-    	
-    	JJack.removeChannel(channelID);
     	
     	int i = 0;
     	for(Node n : mainPane.lookupAll(".channel")) {
@@ -99,7 +95,8 @@ public class JJackController {
     	}
     }
     
-    public void resetChannels() {
+    void resetChannels() {
+		JJack.getStage().setWidth(720);
     	for(Node n : mainPane.lookupAll(".channel")) {
     		AnchorPane a = (AnchorPane) n;
     		if(!IntStream.range(0, JJack.DEFAULT_CHANNEL_COUNT).anyMatch(i -> a.getId().equals("channel" + i))) {
@@ -128,6 +125,8 @@ public class JJackController {
 		if(!b.isPresent() || b.get() == ButtonType.CANCEL) return;
 		
 		if(b.get() == ButtonType.YES) saveConfigurationAs(null);
+		
+		JJack.resetChannels();
 	}
 
 	@FXML

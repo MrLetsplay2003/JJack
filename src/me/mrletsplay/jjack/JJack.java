@@ -143,7 +143,7 @@ public class JJack extends Application {
 			
 			@Override
 			public void handle(long now) {
-				for(JJackChannel ch : channels) ch.updateUI();
+				for(JJackChannel ch : new ArrayList<>(channels)) ch.updateUI();
 			}
 			
 		}.start();
@@ -188,11 +188,19 @@ public class JJack extends Application {
 		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
 		JJackChannel ch = new JJackChannel(id);
 		channels.add(ch);
+		controller.addChannel(ch);
 		return ch;
 	}
 	
 	public static void removeChannel(int channel) {
 		channels.removeIf(ch -> ch.getID() == channel);
+		
+		controller.removeChannel(channel);
+	}
+	
+	public static void resetChannels() {
+		channels.removeIf(ch -> ch.getID() >= DEFAULT_CHANNEL_COUNT);
+		controller.resetChannels();
 	}
 	
 	public static void saveConfiguration(File file) {
@@ -210,14 +218,12 @@ public class JJack extends Application {
 	public static void loadConfiguration(File file) {
 		FileCustomConfig cc = ConfigLoader.loadFileConfig(file);
 		
-		stage.setWidth(720);
-		channels.removeIf(ch -> ch.getID() >= DEFAULT_CHANNEL_COUNT);
-		controller.resetChannels();
+		resetChannels();
 		
 		for(String channel : cc.getKeys("channel")) {
 			int channelID = Integer.parseInt(channel);
 			JJackChannel ch = getChannel(channelID);
-			if(ch == null) ch = controller.addNewChannel();
+			if(ch == null) ch = JJack.createChannel();
 			
 			String in = cc.getString("channel." + channel + ".in");
 			String out = cc.getString("channel." + channel + ".out");
