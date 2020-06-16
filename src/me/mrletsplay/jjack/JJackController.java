@@ -48,7 +48,7 @@ public class JJackController {
 		Alert alert = new Alert(AlertType.INFORMATION, "Made by MrLetsplay", ButtonType.OK);
 		alert.setTitle("About");
 		alert.setHeaderText("JJack");
-		alert.initOwner(JJack.getStage());
+		alert.initOwner(JJack.stage);
 		alert.show();
 	}
 
@@ -58,8 +58,8 @@ public class JJackController {
     }
     
     void addChannel(JJackChannel channel) {
-    	double oldW = JJack.getStage().getWidth();
-    	JJack.getStage().setWidth(oldW + 175);
+    	double oldW = JJack.stage.getWidth();
+    	JJack.stage.setWidth(oldW + 175);
     	
     	try {
 	    	URL url = JJack.class.getResource("/include/channel.fxml");
@@ -79,8 +79,8 @@ public class JJackController {
     }
     
     void removeChannel(int channelID) {
-    	double oldW = JJack.getStage().getWidth();
-    	JJack.getStage().setWidth(oldW - 175);
+    	double oldW = JJack.stage.getWidth();
+    	JJack.stage.setWidth(oldW - 175);
     	
     	int i = 0;
     	for(Node n : mainPane.lookupAll(".channel")) {
@@ -96,7 +96,7 @@ public class JJackController {
     }
     
     void resetChannels() {
-		JJack.getStage().setWidth(720);
+		JJack.stage.setWidth(720);
     	for(Node n : mainPane.lookupAll(".channel")) {
     		AnchorPane a = (AnchorPane) n;
     		if(!IntStream.range(0, JJack.DEFAULT_CHANNEL_COUNT).anyMatch(i -> a.getId().equals("channel" + i))) {
@@ -111,7 +111,7 @@ public class JJackController {
 		FileChooser chooser = new FileChooser();
 		chooser.setInitialDirectory(new File("."));
 		chooser.getExtensionFilters().add(new ExtensionFilter("Yaml Configuration file", "*.yml", "*.yaml"));
-		File f = chooser.showOpenDialog(JJack.getStage());
+		File f = chooser.showOpenDialog(JJack.stage);
 		if(f == null) return;
 		JJack.loadConfiguration(f);
 	}
@@ -134,7 +134,7 @@ public class JJackController {
 		Alert alert = new Alert(AlertType.INFORMATION, "Coming soon", ButtonType.OK);
 		alert.setTitle("Preferences");
 		alert.setHeaderText("JJack");
-		alert.initOwner(JJack.getStage());
+		alert.initOwner(JJack.stage);
 		alert.show();
 	}
 
@@ -147,7 +147,7 @@ public class JJackController {
 	void saveConfigurationAs(ActionEvent event) {
 		FileChooser chooser = new FileChooser();
 		chooser.setInitialDirectory(new File("."));
-		File f = chooser.showSaveDialog(JJack.getStage());
+		File f = chooser.showSaveDialog(JJack.stage);
 		if(f == null) return;
 		
 		if(!f.getName().endsWith(".yml") && !f.getName().endsWith(".yaml")) {

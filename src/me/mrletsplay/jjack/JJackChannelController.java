@@ -47,7 +47,7 @@ public class JJackChannelController {
 
 	@FXML
 	void removeChannel(ActionEvent event) {
-		JJack.getController().removeChannel(channel.getID());
+		JJack.removeChannel(channel.getID());
 	}
 
 	@FXML

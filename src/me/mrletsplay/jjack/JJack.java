@@ -37,7 +37,8 @@ public class JJack extends Application {
 	
 	public static final int DEFAULT_CHANNEL_COUNT = 4;
 	
-	private static Stage stage;
+	static Stage stage;
+	
 	private static JackClient client;
 	private static JJackController controller;
 	private static ObservableList<JJackInputPort> inputPorts;
@@ -154,16 +155,8 @@ public class JJack extends Application {
 		System.exit(0);
 	}
 	
-	public static Stage getStage() {
-		return stage;
-	}
-	
 	public static JackClient getClient() {
 		return client;
-	}
-	
-	public static JJackController getController() {
-		return controller;
 	}
 	
 	public static ObservableList<JJackInputPort> getInputPorts() {
