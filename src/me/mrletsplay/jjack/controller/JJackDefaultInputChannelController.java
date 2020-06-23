@@ -55,26 +55,14 @@ public class JJackDefaultInputChannelController {
 
 	@FXML
 	void editOutputs(ActionEvent event) {
-//		Alert alert = new Alert(AlertType.INFORMATION, "Made by MrLetsplay", ButtonType.OK);
-//		alert.setTitle("About");
-//		alert.setHeaderText("JJack");
-//		
-//		DialogPane p = new DialogPane();
-//		ListView<String> l = new ListView<>();
-//		l.getItems().add("yeet");
-//		p.setExpandableContent(l);
-//		
-//		alert.setDialogPane(p);
-//		alert.setOnCloseRequest(ev -> {
-//			alert.close();
-//		});
-//		alert.initOwner(JJack.stage);
-//		alert.show();
-		
 		CheckListView<JJackDefaultOutputChannel> l = new CheckListView<>();
-		l.getItems().addAll(JJack.getDefaultOutputChannels().stream()
+		
+		l.getItems().addAll(JJack.getChannelsOfType(JJackDefaultOutputChannel.class).stream()
 				.filter(o -> o.getOutputPort() != null)
 				.collect(Collectors.toList()));
+		
+		l.setPrefWidth(350);
+		l.setPrefHeight(400);
 		
 		for(JJackDefaultOutputChannel out : channel.getOutputs()) {
 			l.getCheckModel().check(out);

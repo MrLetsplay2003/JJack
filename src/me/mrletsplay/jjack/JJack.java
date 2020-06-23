@@ -28,8 +28,10 @@ import javafx.stage.Stage;
 import me.mrletsplay.jjack.channel.JJackChannel;
 import me.mrletsplay.jjack.channel.JJackChannelType;
 import me.mrletsplay.jjack.channel.JJackComboChannel;
+import me.mrletsplay.jjack.channel.JJackDefaultComboChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackInputChannel;
 import me.mrletsplay.jjack.channel.JJackOutputChannel;
 import me.mrletsplay.jjack.controller.JJackController;
 import me.mrletsplay.jjack.port.JJackInputPort;
@@ -86,7 +88,7 @@ public class JJack extends Application {
 				p.initOutput(nframes);
 			});
 			
-			for(JJackOutputChannel channel : getDefaultOutputChannels()) {
+			for(JJackOutputChannel channel : getOutputChannels()) {
 				channel.process(client, nframes);
 			}
 			
@@ -153,7 +155,7 @@ public class JJack extends Application {
 		volume /= floats.length;
 		
 		buffer.rewind();
-		return volume * 200;
+		return volume;
 	}
 	
 	public static void adjustVolume(FloatBuffer buffer, double volume) {
@@ -178,7 +180,7 @@ public class JJack extends Application {
 		return inputPorts;
 	}
 	
-	public static ObservableList<JJackOutputPort> getOutputPorts() {
+	public static synchronized ObservableList<JJackOutputPort> getOutputPorts() {
 		return outputPorts;
 	}
 	
@@ -186,24 +188,22 @@ public class JJack extends Application {
 		return channels;
 	}
 	
-	public static List<JJackDefaultInputChannel> getDefaultInputChannels() {
-		return channels.stream()
-				.filter(ch -> ch instanceof JJackDefaultInputChannel)
-				.map(ch -> (JJackDefaultInputChannel) ch)
-				.collect(Collectors.toList());
+	public static List<JJackInputChannel> getInputChannels() {
+		return getChannelsOfType(JJackInputChannel.class);
 	}
 	
-	public static List<JJackDefaultOutputChannel> getDefaultOutputChannels() {
-		return channels.stream()
-				.filter(ch -> ch instanceof JJackDefaultOutputChannel)
-				.map(ch -> (JJackDefaultOutputChannel) ch)
-				.collect(Collectors.toList());
+	public static List<JJackOutputChannel> getOutputChannels() {
+		return getChannelsOfType(JJackOutputChannel.class);
 	}
 	
 	public static List<JJackComboChannel> getComboChannels() {
+		return getChannelsOfType(JJackComboChannel.class);
+	}
+	
+	public static <T extends JJackChannel> List<T> getChannelsOfType(Class<T> type) {
 		return channels.stream()
-				.filter(ch -> ch instanceof JJackComboChannel)
-				.map(ch -> (JJackComboChannel) ch)
+				.filter(type::isInstance)
+				.map(type::cast)
 				.collect(Collectors.toList());
 	}
 	
@@ -229,9 +229,9 @@ public class JJack extends Application {
 		return ch;
 	}
 	
-	public static JJackComboChannel createComboChannel() {
+	public static JJackDefaultComboChannel createComboChannel() {
 		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
-		JJackComboChannel ch = new JJackComboChannel(id);
+		JJackDefaultComboChannel ch = new JJackDefaultComboChannel(id);
 		channels.add(ch);
 		controller.addComboChannel(ch);
 		return ch;

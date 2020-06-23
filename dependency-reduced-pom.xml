@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.mrletsplay</groupId>
   <artifactId>JJack</artifactId>
-  <version>1.0</version>
+  <version>1.1</version>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <resources>
@@ -38,6 +38,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
         <configuration>
           <archive>
             <manifest>

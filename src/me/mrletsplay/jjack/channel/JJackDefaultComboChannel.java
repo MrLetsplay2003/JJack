@@ -9,19 +9,22 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import me.mrletsplay.jjack.JJack;
+import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 import me.mrletsplay.mrcore.json.JSONObject;
 
-public class JJackDefaultOutputChannel implements JJackOutputChannel {
+public class JJackDefaultComboChannel implements JJackComboChannel {
 	
 	private int id;
+	private ObjectProperty<JJackInputPort> inputPortProperty;
 	private ObjectProperty<JJackOutputPort> outputPortProperty;
 	private DoubleProperty volumeProperty;
 	private double currentVolume;
 	private DoubleProperty currentVolumeProperty;
 	
-	public JJackDefaultOutputChannel(int id) {
+	public JJackDefaultComboChannel(int id) {
 		this.id = id;
+		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputPortProperty = new SimpleObjectProperty<>();
 		this.volumeProperty = new SimpleDoubleProperty(100);
 		this.currentVolumeProperty = new SimpleDoubleProperty();
@@ -34,7 +37,19 @@ public class JJackDefaultOutputChannel implements JJackOutputChannel {
 	
 	@Override
 	public JJackChannelType getType() {
-		return JJackChannelType.OUTPUT;
+		return JJackChannelType.COMBO;
+	}
+
+	public ObjectProperty<JJackInputPort> getInputPortProperty() {
+		return inputPortProperty;
+	}
+	
+	public void setInputPort(JJackInputPort inputPort) {
+		inputPortProperty.set(inputPort);
+	}
+	
+	public JJackInputPort getInputPort() {
+		return inputPortProperty.get();
 	}
 
 	public ObjectProperty<JJackOutputPort> getOutputPortProperty() {
@@ -50,11 +65,6 @@ public class JJackDefaultOutputChannel implements JJackOutputChannel {
 	}
 
 	@Override
-	public void setVolume(double volume) {
-		volumeProperty.set(volume * 100);
-	}
-
-	@Override
 	public DoubleProperty getVolumeProperty() {
 		return volumeProperty;
 	}
@@ -66,19 +76,12 @@ public class JJackDefaultOutputChannel implements JJackOutputChannel {
 	
 	@Override
 	public void process(JackClient client, int numFrames) {
-		if(getOutputPort() == null) return;
+		if(getInputPort() == null || getOutputPort() == null) return;
 		
+		FloatBuffer in = getInputPort().getJackPort().getFloatBuffer();
 		FloatBuffer out = FloatBuffer.allocate(numFrames);
 		
-		boolean av = false;
-		for(JJackDefaultInputChannel inC : JJack.getChannelsOfType(JJackDefaultInputChannel.class)) {
-			if(inC.getInputPort() == null || !inC.getOutputs().contains(this)) continue;
-
-			FloatBuffer in = inC.yieldData();
-			JJack.combine(out, in, av);
-			in.rewind();
-			av = true;
-		}
+		out.put(in);
 		
 		JJack.adjustVolume(out, getVolume() / 100);
 		
@@ -93,6 +96,7 @@ public class JJackDefaultOutputChannel implements JJackOutputChannel {
 		}
 		
 		getOutputPort().writeOutput(out);
+		in.rewind();
 	}
 	
 	@Override
@@ -106,23 +110,22 @@ public class JJackDefaultOutputChannel implements JJackOutputChannel {
 	}
 	
 	@Override
-	public String toString() {  
-		return getOutputPort().getName();
-	}
-	
-	@Override
 	public JSONObject save() {
-		JSONObject o = JJackOutputChannel.super.save();
+		JSONObject o = JJackComboChannel.super.save();
+		o.set("input", getInputPort() == null ? null : getInputPort().getName());
 		o.set("output", getOutputPort() == null ? null : getOutputPort().getName());
 		return o;
 	}
 	
 	@Override
 	public void load(JSONObject object) {
-		JJackOutputChannel.super.load(object);
+		JJackComboChannel.super.load(object);
+		getInputPortProperty().set(JJack.getInputPorts().stream()
+				.filter(i -> i.getName().equals(object.getString("input")))
+				.findFirst().orElse(null));
 		getOutputPortProperty().set(JJack.getOutputPorts().stream()
 				.filter(i -> i.getName().equals(object.getString("output")))
 				.findFirst().orElse(null));
 	}
-
+	
 }

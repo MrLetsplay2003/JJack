@@ -14,7 +14,7 @@ import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.mrcore.json.JSONObject;
 
-public class JJackDefaultInputChannel implements JJackInputChannel {
+public class JJackStereoInputChannel implements JJackInputChannel {
 	
 	private int id;
 	private ObjectProperty<JJackInputPort> inputPortProperty;
@@ -23,7 +23,7 @@ public class JJackDefaultInputChannel implements JJackInputChannel {
 	private double currentVolume;
 	private DoubleProperty currentVolumeProperty;
 	
-	public JJackDefaultInputChannel(int id) {
+	public JJackStereoInputChannel(int id) {
 		this.id = id;
 		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputsProperty = new SimpleListProperty<>(FXCollections.observableArrayList());
@@ -99,8 +99,6 @@ public class JJackDefaultInputChannel implements JJackInputChannel {
 		FloatBuffer in = getInputPort().getJackPort().getFloatBuffer();
 		
 		double volume = JJack.averageVolume(in);
-		
-		volume = volume == 0 ? 0 : Math.max(0, (0.3 * Math.log(volume) + 1) * 100);
 		
 		if(volume < currentVolume) {
 			currentVolume = Math.max(volume, currentVolume - .4f);

@@ -18,7 +18,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import me.mrletsplay.jjack.JJack;
-import me.mrletsplay.jjack.channel.JJackComboChannel;
+import me.mrletsplay.jjack.channel.JJackDefaultComboChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
 import me.mrletsplay.mrcore.misc.FriendlyException;
@@ -70,7 +70,7 @@ public class JJackController {
 		JJack.createComboChannel();
 	}
 	
-	public void addComboChannel(JJackComboChannel channel) {
+	public void addComboChannel(JJackDefaultComboChannel channel) {
 		double oldW = JJack.stage.getWidth();
 		JJack.stage.setWidth(oldW + 175);
 		
