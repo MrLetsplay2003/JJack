@@ -1,4 +1,4 @@
-package me.mrletsplay.jjack;
+package me.mrletsplay.jjack.controller;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -8,11 +8,12 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
-import me.mrletsplay.jjack.channel.JJackChannel;
+import me.mrletsplay.jjack.JJack;
+import me.mrletsplay.jjack.channel.JJackComboChannel;
 import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 
-public class JJackChannelController {
+public class JJackComboChannelController {
 
 	@FXML
 	private ResourceBundle resources;
@@ -32,9 +33,9 @@ public class JJackChannelController {
 	@FXML
 	private Slider volumeOut;
 
-	protected JJackChannel channel;
+	protected JJackComboChannel channel;
 	
-	public void setChannel(JJackChannel channel) {
+	public void setChannel(JJackComboChannel channel) {
 		this.channel = channel;
 		
 		volumeOut.valueProperty().bind(channel.getCurrentVolumeProperty());

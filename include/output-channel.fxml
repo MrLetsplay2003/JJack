@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="460.0" prefWidth="175.0" style="-fx-background-color: #2f2f2f;" styleClass="channel" stylesheets="@ui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.mrletsplay.jjack.controller.JJackDefaultOutputChannelController">
+   <children>
+      <ComboBox id="device-out" fx:id="outDevice" layoutX="13.0" layoutY="43.0" prefWidth="150.0" promptText="Output Device" styleClass="device-combo" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+      <Slider fx:id="volume" layoutX="80.0" layoutY="146.0" max="125.0" minorTickCount="4" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" styleClass="volume-slider" value="100.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="45.0" AnchorPane.topAnchor="50.0" />
+      <Slider fx:id="volumeOut" layoutX="37.0" layoutY="134.0" orientation="VERTICAL" styleClass="volume-out-slider" AnchorPane.bottomAnchor="10.0" AnchorPane.topAnchor="50.0" />
+      <Button layoutX="138.0" layoutY="87.0" mnemonicParsing="false" onAction="#removeChannel" styleClass="remove-button" text="x" AnchorPane.rightAnchor="11.0" AnchorPane.topAnchor="50.0" />
+   </children>
+</AnchorPane>

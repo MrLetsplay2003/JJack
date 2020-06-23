@@ -5,9 +5,8 @@ import java.net.URL;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.jaudiolibs.jnajack.Jack;
 import org.jaudiolibs.jnajack.JackClient;
@@ -27,17 +26,24 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import me.mrletsplay.jjack.channel.JJackChannel;
+import me.mrletsplay.jjack.channel.JJackChannelType;
+import me.mrletsplay.jjack.channel.JJackComboChannel;
+import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
+import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackOutputChannel;
+import me.mrletsplay.jjack.controller.JJackController;
 import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 import me.mrletsplay.mrcore.config.ConfigLoader;
 import me.mrletsplay.mrcore.config.FileCustomConfig;
 import me.mrletsplay.mrcore.config.impl.DefaultFileCustomConfig;
+import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJack extends Application {
 	
 	public static final int DEFAULT_CHANNEL_COUNT = 4;
 	
-	static Stage stage;
+	public static Stage stage;
 	
 	private static JackClient client;
 	private static JJackController controller;
@@ -50,11 +56,7 @@ public class JJack extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		inputPorts = FXCollections.observableArrayList();
 		outputPorts = FXCollections.observableArrayList();
-		channels = new ArrayList<>(DEFAULT_CHANNEL_COUNT);
-		
-		for(int i = 0; i < DEFAULT_CHANNEL_COUNT; i++) {
-			channels.add(new JJackChannel(i));
-		}
+		channels = new ArrayList<>();
 		
 		stage = primaryStage;
 		
@@ -80,41 +82,18 @@ public class JJack extends Application {
 		client = Jack.getInstance().openClient("JJack", EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
 		
 		client.setProcessCallback((client, nframes) -> {
-			Map<String, FloatBuffer> portOutput = new HashMap<>();
+			getOutputPorts().forEach(p -> {
+				p.initOutput(nframes);
+			});
 			
-			for(JJackChannel channel : new ArrayList<>(channels)) {
-				if(channel.getInputPort() == null || channel.getOutputPort() == null) continue;
-				
-				JackPort inPort = channel.getInputPort().getJackPort();
-				JackPort outPort = channel.getOutputPort().getJackPort();
-				
-				FloatBuffer in = inPort.getFloatBuffer();
-				
-				if(portOutput.containsKey(outPort.getShortName())) {
-					FloatBuffer oldOut = portOutput.get(outPort.getShortName());
-					int numFloats = oldOut.rewind().remaining();
-					
-					FloatBuffer newOut = FloatBuffer.allocate(numFloats);
-					channel.process(client, in, newOut, nframes);
-					
-					float[] oldFloats = new float[numFloats];
-					oldOut.get(oldFloats);
-					
-					float[] newFloats = new float[numFloats];
-					newOut.flip().get(newFloats);
-					
-					for(int i = 0; i < numFloats; i++) {
-						newFloats[i] = oldFloats[i] + newFloats[i];
-					}
-					
-					oldOut.rewind().put(newFloats);
-				}else {
-					FloatBuffer out = outPort.getFloatBuffer();
-					channel.process(client, in, out, nframes);
-					portOutput.put(outPort.getShortName(), out);
-				}
-				
-				in.rewind();
+			for(JJackOutputChannel channel : getDefaultOutputChannels()) {
+				channel.process(client, nframes);
+			}
+			
+			getOutputPorts().forEach(p -> p.flushOutput());
+			
+			for(JJackChannel ch : channels) {
+				ch.update();
 			}
 			return true;
 		});
@@ -139,7 +118,6 @@ public class JJack extends Application {
 			JJack.outputPorts.add(new JJackOutputPort(p.getShortName(), p));
 		}
 		
-		
 		new AnimationTimer() {
 			
 			@Override
@@ -148,6 +126,43 @@ public class JJack extends Application {
 			}
 			
 		}.start();
+	}
+	
+	public static void combine(FloatBuffer current, FloatBuffer additional, boolean average) {
+		int numFloats = current.rewind().remaining();
+		
+		float[] oldFloats = new float[numFloats];
+		current.get(oldFloats);
+		
+		float[] newFloats = new float[numFloats];
+		additional.get(newFloats);
+		
+		for(int i = 0; i < numFloats; i++) {
+			newFloats[i] = (oldFloats[i] + newFloats[i]) / (average ? 2 : 1);
+		}
+		
+		current.rewind().put(newFloats);
+	}
+	
+	public static float averageVolume(FloatBuffer buffer) {
+		float[] floats = new float[buffer.rewind().remaining()];
+		buffer.get(floats);
+		
+		float volume = 0;
+		for(float f : floats) volume += Math.abs(f);
+		volume /= floats.length;
+		
+		buffer.rewind();
+		return volume * 200;
+	}
+	
+	public static void adjustVolume(FloatBuffer buffer, double volume) {
+		float[] floats = new float[buffer.rewind().remaining()];
+		buffer.get(floats);
+		
+		for(int i = 0; i < floats.length; i++) floats[i] = (float) (floats[i] * Math.pow(volume, 2));
+		
+		buffer.rewind().put(floats).rewind();
 	}
 	
 	public static void exit() {
@@ -171,17 +186,54 @@ public class JJack extends Application {
 		return channels;
 	}
 	
+	public static List<JJackDefaultInputChannel> getDefaultInputChannels() {
+		return channels.stream()
+				.filter(ch -> ch instanceof JJackDefaultInputChannel)
+				.map(ch -> (JJackDefaultInputChannel) ch)
+				.collect(Collectors.toList());
+	}
+	
+	public static List<JJackDefaultOutputChannel> getDefaultOutputChannels() {
+		return channels.stream()
+				.filter(ch -> ch instanceof JJackDefaultOutputChannel)
+				.map(ch -> (JJackDefaultOutputChannel) ch)
+				.collect(Collectors.toList());
+	}
+	
+	public static List<JJackComboChannel> getComboChannels() {
+		return channels.stream()
+				.filter(ch -> ch instanceof JJackComboChannel)
+				.map(ch -> (JJackComboChannel) ch)
+				.collect(Collectors.toList());
+	}
+	
 	public static JJackChannel getChannel(int channel) {
 		return channels.stream()
 				.filter(ch -> ch.getID() == channel)
 				.findFirst().orElse(null);
 	}
 	
-	public static JJackChannel createChannel() {
+	public static JJackDefaultInputChannel createDefaultInputChannel() {
 		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
-		JJackChannel ch = new JJackChannel(id);
+		JJackDefaultInputChannel ch = new JJackDefaultInputChannel(id);
 		channels.add(ch);
-		controller.addChannel(ch);
+		controller.addDefaultInputChannel(ch);
+		return ch;
+	}
+	
+	public static JJackDefaultOutputChannel createDefaultOutputChannel() {
+		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
+		JJackDefaultOutputChannel ch = new JJackDefaultOutputChannel(id);
+		channels.add(ch);
+		controller.addDefaultOutputChannel(ch);
+		return ch;
+	}
+	
+	public static JJackComboChannel createComboChannel() {
+		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
+		JJackComboChannel ch = new JJackComboChannel(id);
+		channels.add(ch);
+		controller.addComboChannel(ch);
 		return ch;
 	}
 	
@@ -200,9 +252,8 @@ public class JJack extends Application {
 		FileCustomConfig cc = new DefaultFileCustomConfig(file);
 		
 		for(JJackChannel channel : channels) {
-			cc.set("channel." + channel.getID() + ".in", channel.getInputPort() == null ? null : channel.getInputPort().getName());
-			cc.set("channel." + channel.getID() + ".out", channel.getOutputPort() == null ? null : channel.getOutputPort().getName());
-			cc.set("channel." + channel.getID() + ".volume", channel.getVolume());
+			cc.set("channel." + channel.getID() + ".type", channel.getType().name());
+			cc.set("channel." + channel.getID() + ".properties", channel.save());
 		}
 		
 		cc.saveToFile();
@@ -214,25 +265,15 @@ public class JJack extends Application {
 		resetChannels();
 		
 		for(String channel : cc.getKeys("channel")) {
+			var type = JJackChannelType.valueOf(cc.getString("channel." + channel + ".type", JJackChannelType.COMBO.name(), false));
+			
 			int channelID = Integer.parseInt(channel);
 			JJackChannel ch = getChannel(channelID);
-			if(ch == null) ch = JJack.createChannel();
+			if(ch == null) ch = type.createChannel();
 			
-			String in = cc.getString("channel." + channel + ".in");
-			String out = cc.getString("channel." + channel + ".out");
-			double volume = cc.getDouble("channel." + channel + ".volume");
+			JSONObject props = cc.getGeneric("channel." + channel + ".properties", JSONObject.class);
 			
-			JJackInputPort inP = inputPorts.stream()
-					.filter(p -> p.getName().equals(in))
-					.findFirst().orElse(null);
-			
-			JJackOutputPort outP = outputPorts.stream()
-					.filter(p -> p.getName().equals(out))
-					.findFirst().orElse(null);
-			
-			ch.setInputPort(inP);
-			ch.setOutputPort(outP);
-			ch.setVolume(volume);
+			ch.load(props);
 		}
 	}
 

@@ -5,7 +5,7 @@
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="460.0" prefWidth="175.0" style="-fx-background-color: #2f2f2f;" styleClass="channel" stylesheets="@ui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.mrletsplay.jjack.JJackChannelController">
+<AnchorPane prefHeight="460.0" prefWidth="175.0" style="-fx-background-color: #2f2f2f;" styleClass="channel" stylesheets="@ui.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.mrletsplay.jjack.controller.JJackComboChannelController">
    <children>
       <ComboBox id="device-in" fx:id="inDevice" layoutX="13.0" layoutY="14.0" prefWidth="150.0" promptText="Input Device" styleClass="device-combo" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
       <ComboBox id="device-out" fx:id="outDevice" layoutX="13.0" layoutY="43.0" prefWidth="150.0" promptText="Output Device" styleClass="device-combo" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="50.0" />
