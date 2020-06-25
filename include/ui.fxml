@@ -27,6 +27,8 @@
                   <MenuItem mnemonicParsing="false" onAction="#addInputChannel" text="Add Input Channel" />
                   <MenuItem mnemonicParsing="false" onAction="#addOutputChannel" text="Add Output Channel" />
                   <MenuItem mnemonicParsing="false" onAction="#addComboChannel" text="Add Combined Channel" />
+                  <MenuItem mnemonicParsing="false" onAction="#addStereoInputChannel" text="Add Stereo Input Channel" />
+                  <MenuItem mnemonicParsing="false" onAction="#addStereoOutputChannel" text="Add Stereo Output Channel" />
               </items>
             </Menu>
         <Menu mnemonicParsing="false" text="Help">

@@ -18,9 +18,12 @@ import javafx.scene.layout.AnchorPane;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import me.mrletsplay.jjack.JJack;
+import me.mrletsplay.jjack.channel.JJackChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultComboChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
+import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
 import me.mrletsplay.mrcore.misc.FriendlyException;
 
 public class JJackController {
@@ -69,65 +72,58 @@ public class JJackController {
 	void addComboChannel(ActionEvent event) {
 		JJack.createComboChannel();
 	}
+
+	@FXML
+	void addStereoInputChannel(ActionEvent event) {
+		JJack.createStereoInputChannel();
+	}
+	
+	@FXML
+	void addStereoOutputChannel(ActionEvent event) {
+		JJack.createStereoOutputChannel();
+	}
 	
 	public void addComboChannel(JJackDefaultComboChannel channel) {
-		double oldW = JJack.stage.getWidth();
-		JJack.stage.setWidth(oldW + 175);
-		
-		try {
-			URL url = JJack.class.getResource("/include/combo-channel.fxml");
-			if(url == null) url = new File("./include/combo-channel.fxml").toURI().toURL();
-			FXMLLoader l = new FXMLLoader(url);
-			Parent pr = l.load(url.openStream());
-			JJackComboChannelController ctrl = l.getController();
-			ctrl.setChannel(channel);
-			mainPane.getChildren().add(pr);
-			AnchorPane.setTopAnchor(pr, 10d);
-			AnchorPane.setLeftAnchor(pr, oldW - 10);
-			AnchorPane.setBottomAnchor(pr, 10d);
-			pr.setId("channel" + channel.getID());
-		}catch(Exception e) {
-			throw new FriendlyException(e);
-		}
+		JJackComboChannelController ctrl = addChannel(channel, "combo-channel");
+		ctrl.setChannel(channel);
 	}
 	
 	public void addDefaultInputChannel(JJackDefaultInputChannel channel) {
-		double oldW = JJack.stage.getWidth();
-		JJack.stage.setWidth(oldW + 175);
-		
-		try {
-			URL url = JJack.class.getResource("/include/input-channel.fxml");
-			if(url == null) url = new File("./include/input-channel.fxml").toURI().toURL();
-			FXMLLoader l = new FXMLLoader(url);
-			Parent pr = l.load(url.openStream());
-			JJackDefaultInputChannelController ctrl = l.getController();
-			ctrl.setChannel(channel);
-			mainPane.getChildren().add(pr);
-			AnchorPane.setTopAnchor(pr, 10d);
-			AnchorPane.setLeftAnchor(pr, oldW - 10);
-			AnchorPane.setBottomAnchor(pr, 10d);
-			pr.setId("channel" + channel.getID());
-		}catch(Exception e) {
-			throw new FriendlyException(e);
-		}
+		JJackDefaultInputChannelController ctrl = addChannel(channel, "input-channel");
+		ctrl.setChannel(channel);
 	}
 	
 	public void addDefaultOutputChannel(JJackDefaultOutputChannel channel) {
+		JJackDefaultOutputChannelController ctrl = addChannel(channel, "output-channel");
+		ctrl.setChannel(channel);
+	}
+	
+	public void addStereoInputChannel(JJackStereoInputChannel channel) {
+		JJackStereoInputChannelController ctrl = addChannel(channel, "stereo-input-channel");
+		ctrl.setChannel(channel);
+	}
+	
+	public void addStereoOutputChannel(JJackStereoOutputChannel channel) {
+		JJackStereoOutputChannelController ctrl = addChannel(channel, "stereo-output-channel");
+		ctrl.setChannel(channel);
+	}
+	
+	public <T extends JJackChannel, C> C addChannel(T channel, String fxFileName) {
 		double oldW = JJack.stage.getWidth();
 		JJack.stage.setWidth(oldW + 175);
 		
 		try {
-			URL url = JJack.class.getResource("/include/output-channel.fxml");
-			if(url == null) url = new File("./include/output-channel.fxml").toURI().toURL();
+			URL url = JJack.class.getResource("/include/" + fxFileName + ".fxml");
+			if(url == null) url = new File("./include/" + fxFileName + ".fxml").toURI().toURL();
 			FXMLLoader l = new FXMLLoader(url);
 			Parent pr = l.load(url.openStream());
-			JJackDefaultOutputChannelController ctrl = l.getController();
-			ctrl.setChannel(channel);
+			C ctrl = l.getController();
 			mainPane.getChildren().add(pr);
 			AnchorPane.setTopAnchor(pr, 10d);
 			AnchorPane.setLeftAnchor(pr, oldW - 10);
 			AnchorPane.setBottomAnchor(pr, 10d);
 			pr.setId("channel" + channel.getID());
+			return ctrl;
 		}catch(Exception e) {
 			throw new FriendlyException(e);
 		}

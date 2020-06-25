@@ -4,15 +4,20 @@ import java.io.File;
 import java.net.URL;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.jaudiolibs.jnajack.Jack;
 import org.jaudiolibs.jnajack.JackClient;
+import org.jaudiolibs.jnajack.JackException;
 import org.jaudiolibs.jnajack.JackOptions;
 import org.jaudiolibs.jnajack.JackPort;
 import org.jaudiolibs.jnajack.JackPortFlags;
+import org.jaudiolibs.jnajack.JackPortRegistrationCallback;
 import org.jaudiolibs.jnajack.JackPortType;
 import org.jaudiolibs.jnajack.JackStatus;
 
@@ -33,9 +38,13 @@ import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
 import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
 import me.mrletsplay.jjack.channel.JJackInputChannel;
 import me.mrletsplay.jjack.channel.JJackOutputChannel;
+import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
+import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
 import me.mrletsplay.jjack.controller.JJackController;
 import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.jjack.port.JJackOutputPort;
+import me.mrletsplay.jjack.port.stereo.JJackStereoInputPort;
+import me.mrletsplay.jjack.port.stereo.JJackStereoOutputPort;
 import me.mrletsplay.mrcore.config.ConfigLoader;
 import me.mrletsplay.mrcore.config.FileCustomConfig;
 import me.mrletsplay.mrcore.config.impl.DefaultFileCustomConfig;
@@ -51,6 +60,8 @@ public class JJack extends Application {
 	private static JJackController controller;
 	private static ObservableList<JJackInputPort> inputPorts;
 	private static ObservableList<JJackOutputPort> outputPorts;
+	private static ObservableList<JJackStereoInputPort> stereoInputPorts;
+	private static ObservableList<JJackStereoOutputPort> stereoOutputPorts;
 	private static List<JJackChannel> channels;
 	
 	@SuppressWarnings("deprecation")
@@ -58,6 +69,8 @@ public class JJack extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		inputPorts = FXCollections.observableArrayList();
 		outputPorts = FXCollections.observableArrayList();
+		stereoInputPorts = FXCollections.observableArrayList();
+		stereoOutputPorts = FXCollections.observableArrayList();
 		channels = new ArrayList<>();
 		
 		stage = primaryStage;
@@ -100,25 +113,44 @@ public class JJack extends Application {
 			return true;
 		});
 		
+		client.setPortRegistrationCallback(new JackPortRegistrationCallback() {
+			
+			@Override
+			public void portUnregistered(JackClient client, String portFullName) {
+				// TODO
+			}
+			
+			@Override
+			public void portRegistered(JackClient client, String portFullName) {
+				if(client == null) return;
+				
+				new Thread(() -> {
+					try {
+						String[] outPorts = Jack.getInstance().getPorts(null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput));
+						boolean isOutput = Arrays.binarySearch(outPorts, portFullName) >= 0;
+						
+						registerPort(portFullName, isOutput);
+						createStereoChannels();
+					}catch(JackException e) {
+						e.printStackTrace();
+					}
+				}).start();
+			}
+		});
+		
 		client.activate();
 		
 		String[] outputPorts = Jack.getInstance().getPorts(null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput));
 		for(String port : outputPorts) {
-			String portClient = port.split(":")[0];
-			if(portClient.equals(client.getName())) continue;
-			JackPort p = client.registerPort(port, JackPortType.AUDIO, JackPortFlags.JackPortIsInput);
-			Jack.getInstance().connect(client, port, p.getName());
-			JJack.inputPorts.add(new JJackInputPort(p.getShortName(), p));
+			registerPort(port, true);
 		}
 
 		String[] inputPorts = Jack.getInstance().getPorts(null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsInput));
 		for(String port : inputPorts) {
-			String portClient = port.split(":")[0];
-			if(portClient.equals(client.getName())) continue;
-			JackPort p = client.registerPort(port, JackPortType.AUDIO, JackPortFlags.JackPortIsOutput);
-			Jack.getInstance().connect(client, p.getName(), port);
-			JJack.outputPorts.add(new JJackOutputPort(p.getShortName(), p));
+			registerPort(port, false);
 		}
+		
+		createStereoChannels();
 		
 		new AnimationTimer() {
 			
@@ -128,6 +160,66 @@ public class JJack extends Application {
 			}
 			
 		}.start();
+	}
+	
+	private static void registerPort(String portName, boolean isOutput) throws JackException {
+		String portClient = portName.split(":")[0];
+		if(portClient.equals(client.getName())) return;
+		
+		if(isOutput) {
+			JackPort p = client.registerPort(portName, JackPortType.AUDIO, JackPortFlags.JackPortIsInput);
+			Jack.getInstance().connect(client, portName, p.getName());
+			JJack.inputPorts.add(new JJackInputPort(p.getShortName(), p));
+		}else {
+			JackPort p = client.registerPort(portName, JackPortType.AUDIO, JackPortFlags.JackPortIsOutput);
+			Jack.getInstance().connect(client, p.getName(), portName);
+			JJack.outputPorts.add(new JJackOutputPort(p.getShortName(), p));
+		}
+	}
+	
+	private static void createStereoChannels() {
+		createLeftStereoChannels();
+		createRightStereoChannels();
+	}
+	
+	private static void createLeftStereoChannels() {
+		Map<String, List<JJackInputPort>> portMap = new HashMap<>();
+		for(JJackInputPort port : inputPorts) {
+			String portClient = port.getOriginalClientName();
+			List<JJackInputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
+			ports.add(port);
+			portMap.put(portClient, ports);
+		}
+		
+		for(String client : portMap.keySet()) {
+			List<JJackInputPort> ports = portMap.get(client);
+			if(ports.size() != 2) continue;
+			if(stereoInputPorts.stream().anyMatch(s -> (s.getLeft() == ports.get(0) && s.getRight() == ports.get(1))
+						|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
+				continue;
+			
+			stereoInputPorts.add(new JJackStereoInputPort(ports.get(0), ports.get(1)));
+		}
+	}
+	
+	private static void createRightStereoChannels() {
+		Map<String, List<JJackOutputPort>> portMap = new HashMap<>();
+		for(JJackOutputPort port : outputPorts) {
+			String portClient = port.getOriginalClientName();
+			List<JJackOutputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
+			ports.add(port);
+			portMap.put(portClient, ports);
+		}
+		
+		for(String client : portMap.keySet()) {
+			List<JJackOutputPort> ports = portMap.get(client);
+			if(ports.size() != 2) continue;
+			if(stereoOutputPorts.stream().anyMatch(s -> (s.getLeft() == ports.get(0) && s.getRight() == ports.get(1))
+						|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
+				continue;
+			
+			stereoOutputPorts.add(new JJackStereoOutputPort(ports.get(0), ports.get(1)));
+		}
 	}
 	
 	public static void combine(FloatBuffer current, FloatBuffer additional, boolean average) {
@@ -184,6 +276,14 @@ public class JJack extends Application {
 		return outputPorts;
 	}
 	
+	public static ObservableList<JJackStereoInputPort> getStereoInputPorts() {
+		return stereoInputPorts;
+	}
+	
+	public static ObservableList<JJackStereoOutputPort> getStereoOutputPorts() {
+		return stereoOutputPorts;
+	}
+	
 	public static List<JJackChannel> getChannels() {
 		return channels;
 	}
@@ -198,6 +298,14 @@ public class JJack extends Application {
 	
 	public static List<JJackComboChannel> getComboChannels() {
 		return getChannelsOfType(JJackComboChannel.class);
+	}
+	
+	public static List<JJackStereoInputChannel> getStereoInputChannels() {
+		return getChannelsOfType(JJackStereoInputChannel.class);
+	}
+	
+	public static List<JJackStereoOutputChannel> getStereoOutputChannels() {
+		return getChannelsOfType(JJackStereoOutputChannel.class);
 	}
 	
 	public static <T extends JJackChannel> List<T> getChannelsOfType(Class<T> type) {
@@ -226,6 +334,22 @@ public class JJack extends Application {
 		JJackDefaultOutputChannel ch = new JJackDefaultOutputChannel(id);
 		channels.add(ch);
 		controller.addDefaultOutputChannel(ch);
+		return ch;
+	}
+	
+	public static JJackStereoInputChannel createStereoInputChannel() {
+		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
+		JJackStereoInputChannel ch = new JJackStereoInputChannel(id);
+		channels.add(ch);
+		controller.addStereoInputChannel(ch);
+		return ch;
+	}
+	
+	public static JJackStereoOutputChannel createStereoOutputChannel() {
+		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
+		JJackStereoOutputChannel ch = new JJackStereoOutputChannel(id);
+		channels.add(ch);
+		controller.addStereoOutputChannel(ch);
 		return ch;
 	}
 	

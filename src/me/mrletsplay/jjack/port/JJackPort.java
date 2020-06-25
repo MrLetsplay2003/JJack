@@ -11,6 +11,10 @@ public class JJackPort {
 		this.name = name;
 		this.jackPort = jackPort;
 	}
+	
+	public String getOriginalClientName() {
+		return name.split(":")[0];
+	}
 
 	public String getName() {
 		return name;

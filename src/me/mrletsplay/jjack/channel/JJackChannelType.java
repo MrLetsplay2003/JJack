@@ -8,7 +8,9 @@ public enum JJackChannelType {
 	
 	INPUT(() -> JJack.createDefaultInputChannel()),
 	OUTPUT(() -> JJack.createDefaultOutputChannel()),
-	COMBO(() -> JJack.createComboChannel());
+	COMBO(() -> JJack.createComboChannel()),
+	STEREO_INPUT(() -> JJack.createStereoInputChannel()),
+	STEREO_OUTPUT(() -> JJack.createStereoOutputChannel()),;
 	
 	private Supplier<JJackChannel> channelSupplier;
 	

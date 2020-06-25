@@ -13,6 +13,7 @@ module jjack {
 	exports me.mrletsplay.jjack.channel;
 	exports me.mrletsplay.jjack.controller;
 	exports me.mrletsplay.jjack.port;
+	exports me.mrletsplay.jjack.port.stereo;
 	exports me.mrletsplay.jjack.pulseaudio;
 	
 	opens me.mrletsplay.jjack to javafx.graphics, javafx.fxml;	

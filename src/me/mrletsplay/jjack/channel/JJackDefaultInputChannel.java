@@ -85,7 +85,6 @@ public class JJackDefaultInputChannel implements JJackInputChannel {
 		currentVolumeProperty.set(currentVolume);
 	}
 	
-	@Override
 	public FloatBuffer yieldData() {
 		FloatBuffer in = getInputPort().getJackPort().getFloatBuffer();
 		JJack.adjustVolume(in, getVolume() / 100);

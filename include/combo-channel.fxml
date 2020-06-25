@@ -10,7 +10,7 @@
       <ComboBox id="device-in" fx:id="inDevice" layoutX="13.0" layoutY="14.0" prefWidth="150.0" promptText="Input Device" styleClass="device-combo" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
       <ComboBox id="device-out" fx:id="outDevice" layoutX="13.0" layoutY="43.0" prefWidth="150.0" promptText="Output Device" styleClass="device-combo" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="50.0" />
       <Slider fx:id="volume" layoutX="80.0" layoutY="146.0" max="125.0" minorTickCount="4" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" styleClass="volume-slider" value="100.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="45.0" AnchorPane.topAnchor="100.0" />
-      <Slider fx:id="volumeOut" layoutX="37.0" layoutY="134.0" orientation="VERTICAL" styleClass="volume-out-slider" AnchorPane.bottomAnchor="10.0" AnchorPane.topAnchor="100.0" />
+      <Slider fx:id="volumeOut" layoutX="37.0" layoutY="134.0" orientation="VERTICAL" styleClass="volume-out-slider" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="35.0" AnchorPane.topAnchor="100.0" />
       <Button layoutX="138.0" layoutY="87.0" mnemonicParsing="false" onAction="#removeChannel" styleClass="remove-button" text="x" AnchorPane.rightAnchor="11.0" AnchorPane.topAnchor="90.0" />
    </children>
 </AnchorPane>
