@@ -84,6 +84,8 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 	
 	@Override
 	public void process(JackClient client, int numFrames) {
+		if(getOutputPort() != null && getOutputPort().isClosed()) setOutputPort(null);
+		
 		if(getOutputPort() == null) return;
 		
 		FloatBuffer outLeft = FloatBuffer.allocate(numFrames);
@@ -107,24 +109,24 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 		JJack.adjustVolume(outLeft, getVolume() / 100);
 		JJack.adjustVolume(outRight, getVolume() / 100);
 		
-		double volumeLeft = JJack.averageVolume(outLeft);
+		double leftVolume = JJack.averageVolume(outLeft);
 		
-		volumeLeft = volumeLeft == 0 ? 0 : Math.max(0, (0.3 * Math.log(volumeLeft) + 1) * 100);
+		leftVolume = leftVolume == 0 ? 0 : Math.max(0, (0.4 * Math.log10(leftVolume) + 1) * 100);
 		
-		if(volumeLeft < currentLeftVolume) {
-			currentLeftVolume = Math.max(volumeLeft, currentLeftVolume - .4f);
+		if(leftVolume < currentLeftVolume) {
+			currentLeftVolume = Math.max(leftVolume, currentLeftVolume - .4f);
 		}else {
-			currentLeftVolume = Math.min(volumeLeft, 100);
+			currentLeftVolume = Math.min(leftVolume, 100);
 		}
 		
-		double volumeRight = JJack.averageVolume(outRight);
+		double rightVolume = JJack.averageVolume(outRight);
 		
-		volumeRight = volumeRight == 0 ? 0 : Math.max(0, (0.3 * Math.log(volumeRight) + 1) * 100);
+		rightVolume = rightVolume == 0 ? 0 : Math.max(0, (0.4 * Math.log10(rightVolume) + 1) * 100);
 		
-		if(volumeRight < currentRightVolume) {
-			currentRightVolume = Math.max(volumeRight, currentRightVolume - .4f);
+		if(rightVolume < currentRightVolume) {
+			currentRightVolume = Math.max(rightVolume, currentRightVolume - .4f);
 		}else {
-			currentRightVolume = Math.min(volumeRight, 100);
+			currentRightVolume = Math.min(rightVolume, 100);
 		}
 		
 		currentVolume = (currentLeftVolume + currentRightVolume) / 2;

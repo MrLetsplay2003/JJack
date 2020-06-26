@@ -3,7 +3,6 @@ package me.mrletsplay.jjack.controller;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 import org.controlsfx.control.CheckListView;
 
@@ -14,13 +13,15 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Slider;
+import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.util.StringConverter;
 import me.mrletsplay.jjack.JJack;
-import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleInputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
 import me.mrletsplay.jjack.channel.NoSelectionModel;
 import me.mrletsplay.jjack.port.JJackInputPort;
 
-public class JJackDefaultInputChannelController {
+public class JJackSingleInputChannelController {
 
 	@FXML
 	private ResourceBundle resources;
@@ -37,9 +38,9 @@ public class JJackDefaultInputChannelController {
 	@FXML
 	private Slider volumeOut;
 
-	protected JJackDefaultInputChannel channel;
+	protected JJackSingleInputChannel channel;
 	
-	public void setChannel(JJackDefaultInputChannel channel) {
+	public void setChannel(JJackSingleInputChannel channel) {
 		this.channel = channel;
 		
 		volumeOut.valueProperty().bind(channel.getCurrentVolumeProperty());
@@ -55,22 +56,42 @@ public class JJackDefaultInputChannelController {
 
 	@FXML
 	void editOutputs(ActionEvent event) {
-		CheckListView<JJackDefaultOutputChannel> l = new CheckListView<>();
+		CheckListView<JJackSingleOutputChannel> l = new CheckListView<>();
 		
-		l.getItems().addAll(JJack.getChannelsOfType(JJackDefaultOutputChannel.class).stream()
-				.filter(o -> o.getOutputPort() != null)
-				.collect(Collectors.toList()));
+		l.getItems().addAll(JJack.getChannelsOfType(JJackSingleOutputChannel.class));
 		
 		l.setPrefWidth(350);
 		l.setPrefHeight(400);
 		
-		for(JJackDefaultOutputChannel out : channel.getOutputs()) {
+		for(JJackSingleOutputChannel out : channel.getOutputs()) {
 			l.getCheckModel().check(out);
 		}
 		
 		l.setSelectionModel(new NoSelectionModel<>());
 		
-		Dialog<List<JJackDefaultOutputChannel>> d = new Dialog<>();
+		l.setCellFactory(lv -> {
+			CheckBoxListCell<JJackSingleOutputChannel> checkBoxListCell = new CheckBoxListCell<>(item -> l.getItemBooleanProperty(item));
+			
+			checkBoxListCell.focusedProperty().addListener((o, ov, nv) -> {
+				if (nv) checkBoxListCell.getParent().requestFocus();
+			});
+			
+			checkBoxListCell.setConverter(new StringConverter<JJackSingleOutputChannel>() {
+				@Override
+				public String toString(JJackSingleOutputChannel channel) {
+					return "Channel #" + channel.getID() + " ("	+ (channel.getOutputPort() == null ? "none" : channel.getOutputPort().getName()) + ")";
+				}
+
+				@Override
+				public JJackSingleOutputChannel fromString(String string) {
+					return checkBoxListCell.getItem();
+				}
+			});
+			
+			return checkBoxListCell;
+		});
+		
+		Dialog<List<JJackSingleOutputChannel>> d = new Dialog<>();
 		d.getDialogPane().setContent(l);
 		d.setResultConverter((button) -> {
 			if(button != ButtonType.OK) return null;

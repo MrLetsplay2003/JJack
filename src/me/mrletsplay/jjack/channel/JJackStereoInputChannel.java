@@ -119,13 +119,17 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	
 	@Override
 	public void update() {
+		if(getInputPort() != null && getInputPort().isClosed()) setInputPort(null);
+		
 		if(getInputPort() == null) return;
 		
 		FloatBuffer leftIn = getInputPort().getLeft().getJackPort().getFloatBuffer();
 		
+		JJack.adjustVolume(leftIn, getVolume() / 100);
+		
 		double leftVolume = JJack.averageVolume(leftIn);
 		
-		leftVolume = leftVolume == 0 ? 0 : Math.max(0, (0.3 * Math.log(leftVolume) + 1) * 100);
+		leftVolume = leftVolume == 0 ? 0 : Math.max(0, (0.4 * Math.log10(leftVolume) + 1) * 100);
 		
 		if(leftVolume < currentLeftVolume) {
 			currentLeftVolume = Math.max(leftVolume, currentLeftVolume - .4f);
@@ -135,9 +139,11 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 		
 		FloatBuffer rightIn = getInputPort().getRight().getJackPort().getFloatBuffer();
 		
+		JJack.adjustVolume(rightIn, getVolume() / 100);
+		
 		double rightVolume = JJack.averageVolume(rightIn);
 		
-		rightVolume = rightVolume == 0 ? 0 : Math.max(0, (0.3 * Math.log(rightVolume) + 1) * 100);
+		rightVolume = rightVolume == 0 ? 0 : Math.max(0, (0.4 * Math.log10(rightVolume) + 1) * 100);
 		
 		if(rightVolume < currentRightVolume) {
 			currentRightVolume = Math.max(rightVolume, currentRightVolume - .4f);

@@ -6,6 +6,7 @@ public class JJackPort {
 	
 	private String name;
 	private JackPort jackPort;
+	private boolean closed;
 	
 	public JJackPort(String name, JackPort jackPort) {
 		this.name = name;
@@ -22,6 +23,14 @@ public class JJackPort {
 	
 	public JackPort getJackPort() {
 		return jackPort;
+	}
+	
+	public void close() {
+		closed = true;
+	}
+	
+	public boolean isClosed() {
+		return closed;
 	}
 	
 	@Override

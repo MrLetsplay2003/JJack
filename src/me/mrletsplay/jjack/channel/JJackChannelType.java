@@ -6,9 +6,9 @@ import me.mrletsplay.jjack.JJack;
 
 public enum JJackChannelType {
 	
-	INPUT(() -> JJack.createDefaultInputChannel()),
-	OUTPUT(() -> JJack.createDefaultOutputChannel()),
-	COMBO(() -> JJack.createComboChannel()),
+	SINGLE_INPUT(() -> JJack.createSingleInputChannel()),
+	SINGLE_OUTPUT(() -> JJack.createSingleOutputChannel()),
+	SINGLE_COMBO(() -> JJack.createSingleComboChannel()),
 	STEREO_INPUT(() -> JJack.createStereoInputChannel()),
 	STEREO_OUTPUT(() -> JJack.createStereoOutputChannel()),;
 	

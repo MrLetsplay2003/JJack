@@ -9,10 +9,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
 import me.mrletsplay.jjack.JJack;
-import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 
-public class JJackDefaultOutputChannelController {
+public class JJackSingleOutputChannelController {
 
 	@FXML
 	private ResourceBundle resources;
@@ -29,9 +29,9 @@ public class JJackDefaultOutputChannelController {
 	@FXML
 	private Slider volumeOut;
 
-	protected JJackDefaultOutputChannel channel;
+	protected JJackSingleOutputChannel channel;
 	
-	public void setChannel(JJackDefaultOutputChannel channel) {
+	public void setChannel(JJackSingleOutputChannel channel) {
 		this.channel = channel;
 		
 		volumeOut.valueProperty().bind(channel.getCurrentVolumeProperty());

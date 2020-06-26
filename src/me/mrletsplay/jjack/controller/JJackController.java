@@ -19,9 +19,9 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.channel.JJackChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultComboChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleComboChannel;
+import me.mrletsplay.jjack.channel.JJackSingleInputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
 import me.mrletsplay.mrcore.misc.FriendlyException;
@@ -38,16 +38,16 @@ public class JJackController {
 	private AnchorPane mainPane;
 	
 	@FXML
-	private JJackDefaultInputChannelController channel0Controller;
+	private JJackStereoInputChannelController channel0Controller;
 	
 	@FXML
-	private JJackDefaultInputChannelController channel1Controller;
+	private JJackStereoInputChannelController channel1Controller;
 	
 	@FXML
-	private JJackDefaultInputChannelController channel2Controller;
+	private JJackStereoInputChannelController channel2Controller;
 	
 	@FXML
-	private JJackDefaultOutputChannelController channel3Controller;
+	private JJackStereoOutputChannelController channel3Controller;
 
 	@FXML
 	void about(ActionEvent event) {
@@ -59,18 +59,18 @@ public class JJackController {
 	}
 
 	@FXML
-	void addInputChannel(ActionEvent event) {
-		JJack.createDefaultInputChannel();
+	void addSingleInputChannel(ActionEvent event) {
+		JJack.createSingleInputChannel();
 	}
 	
 	@FXML
-	void addOutputChannel(ActionEvent event) {
-		JJack.createDefaultOutputChannel();
+	void addSingleOutputChannel(ActionEvent event) {
+		JJack.createSingleOutputChannel();
 	}
 	
 	@FXML
-	void addComboChannel(ActionEvent event) {
-		JJack.createComboChannel();
+	void addSingleComboChannel(ActionEvent event) {
+		JJack.createSingleComboChannel();
 	}
 
 	@FXML
@@ -83,18 +83,18 @@ public class JJackController {
 		JJack.createStereoOutputChannel();
 	}
 	
-	public void addComboChannel(JJackDefaultComboChannel channel) {
-		JJackComboChannelController ctrl = addChannel(channel, "combo-channel");
+	public void addSingleComboChannel(JJackSingleComboChannel channel) {
+		JJackSingleComboChannelController ctrl = addChannel(channel, "combo-channel");
 		ctrl.setChannel(channel);
 	}
 	
-	public void addDefaultInputChannel(JJackDefaultInputChannel channel) {
-		JJackDefaultInputChannelController ctrl = addChannel(channel, "input-channel");
+	public void addSingleInputChannel(JJackSingleInputChannel channel) {
+		JJackSingleInputChannelController ctrl = addChannel(channel, "input-channel");
 		ctrl.setChannel(channel);
 	}
 	
-	public void addDefaultOutputChannel(JJackDefaultOutputChannel channel) {
-		JJackDefaultOutputChannelController ctrl = addChannel(channel, "output-channel");
+	public void addSingleOutputChannel(JJackSingleOutputChannel channel) {
+		JJackSingleOutputChannelController ctrl = addChannel(channel, "output-channel");
 		ctrl.setChannel(channel);
 	}
 	
@@ -220,14 +220,14 @@ public class JJackController {
 	
 	@FXML
 	void initialize() {
-		JJack.getChannels().add(new JJackDefaultInputChannel(0));
-		JJack.getChannels().add(new JJackDefaultInputChannel(1));
-		JJack.getChannels().add(new JJackDefaultInputChannel(2));
-		JJack.getChannels().add(new JJackDefaultOutputChannel(3));
+		JJack.getChannels().add(new JJackStereoInputChannel(0));
+		JJack.getChannels().add(new JJackStereoInputChannel(1));
+		JJack.getChannels().add(new JJackStereoInputChannel(2));
+		JJack.getChannels().add(new JJackStereoOutputChannel(3));
 		
-		channel0Controller.setChannel((JJackDefaultInputChannel) JJack.getChannel(0));
-		channel1Controller.setChannel((JJackDefaultInputChannel) JJack.getChannel(1));
-		channel2Controller.setChannel((JJackDefaultInputChannel) JJack.getChannel(2));
-		channel3Controller.setChannel((JJackDefaultOutputChannel) JJack.getChannel(3));
+		channel0Controller.setChannel((JJackStereoInputChannel) JJack.getChannel(0));
+		channel1Controller.setChannel((JJackStereoInputChannel) JJack.getChannel(1));
+		channel2Controller.setChannel((JJackStereoInputChannel) JJack.getChannel(2));
+		channel3Controller.setChannel((JJackStereoOutputChannel) JJack.getChannel(3));
 	}
 }

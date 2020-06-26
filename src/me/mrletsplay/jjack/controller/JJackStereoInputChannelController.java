@@ -3,7 +3,6 @@ package me.mrletsplay.jjack.controller;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 import org.controlsfx.control.CheckListView;
 
@@ -14,6 +13,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Slider;
+import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.util.StringConverter;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
@@ -61,9 +62,7 @@ public class JJackStereoInputChannelController {
 	void editOutputs(ActionEvent event) {
 		CheckListView<JJackStereoOutputChannel> l = new CheckListView<>();
 		
-		l.getItems().addAll(JJack.getChannelsOfType(JJackStereoOutputChannel.class).stream()
-				.filter(o -> o.getOutputPort() != null)
-				.collect(Collectors.toList()));
+		l.getItems().addAll(JJack.getChannelsOfType(JJackStereoOutputChannel.class));
 		
 		l.setPrefWidth(350);
 		l.setPrefHeight(400);
@@ -73,6 +72,28 @@ public class JJackStereoInputChannelController {
 		}
 		
 		l.setSelectionModel(new NoSelectionModel<>());
+		
+		l.setCellFactory(lv -> {
+			CheckBoxListCell<JJackStereoOutputChannel> checkBoxListCell = new CheckBoxListCell<>(item -> l.getItemBooleanProperty(item));
+			
+			checkBoxListCell.focusedProperty().addListener((o, ov, nv) -> {
+				if (nv) checkBoxListCell.getParent().requestFocus();
+			});
+			
+			checkBoxListCell.setConverter(new StringConverter<JJackStereoOutputChannel>() {
+				@Override
+				public String toString(JJackStereoOutputChannel channel) {
+					return "Channel #" + channel.getID() + " ("	+ (channel.getOutputPort() == null ? "none" : channel.getOutputPort().getName()) + ")";
+				}
+
+				@Override
+				public JJackStereoOutputChannel fromString(String string) {
+					return checkBoxListCell.getItem();
+				}
+			});
+			
+			return checkBoxListCell;
+		});
 		
 		Dialog<List<JJackStereoOutputChannel>> d = new Dialog<>();
 		d.getDialogPane().setContent(l);

@@ -33,9 +33,9 @@ import javafx.stage.Stage;
 import me.mrletsplay.jjack.channel.JJackChannel;
 import me.mrletsplay.jjack.channel.JJackChannelType;
 import me.mrletsplay.jjack.channel.JJackComboChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultComboChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultInputChannel;
-import me.mrletsplay.jjack.channel.JJackDefaultOutputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleComboChannel;
+import me.mrletsplay.jjack.channel.JJackSingleInputChannel;
+import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
 import me.mrletsplay.jjack.channel.JJackInputChannel;
 import me.mrletsplay.jjack.channel.JJackOutputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
@@ -117,7 +117,23 @@ public class JJack extends Application {
 			
 			@Override
 			public void portUnregistered(JackClient client, String portFullName) {
-				// TODO
+				JJackInputPort ip = inputPorts.stream()
+						.filter(pt -> pt.getName().equals(portFullName))
+						.findFirst().orElse(null);
+				
+				if(ip != null) {
+					unregisterInputPort(ip);
+					stereoInputPorts.removeIf(s -> s.isClosed());
+				}
+				
+				JJackOutputPort op = outputPorts.stream()
+						.filter(pt -> pt.getName().equals(portFullName))
+						.findFirst().orElse(null);
+				
+				if(op != null) {
+					unregisterOutputPort(op);
+					stereoOutputPorts.removeIf(s -> s.isClosed());
+				}
 			}
 			
 			@Override
@@ -175,6 +191,16 @@ public class JJack extends Application {
 			Jack.getInstance().connect(client, p.getName(), portName);
 			JJack.outputPorts.add(new JJackOutputPort(p.getShortName(), p));
 		}
+	}
+	
+	private static void unregisterInputPort(JJackInputPort port) {
+		port.close();
+		inputPorts.remove(port);
+	}
+	
+	private static void unregisterOutputPort(JJackOutputPort port) {
+		port.close();
+		outputPorts.remove(port);
 	}
 	
 	private static void createStereoChannels() {
@@ -243,11 +269,11 @@ public class JJack extends Application {
 		buffer.get(floats);
 		
 		float volume = 0;
-		for(float f : floats) volume += Math.abs(f);
+		for(float f : floats) volume += Math.pow(f, 2);
 		volume /= floats.length;
 		
 		buffer.rewind();
-		return volume;
+		return (float) Math.sqrt(volume);
 	}
 	
 	public static void adjustVolume(FloatBuffer buffer, double volume) {
@@ -300,14 +326,6 @@ public class JJack extends Application {
 		return getChannelsOfType(JJackComboChannel.class);
 	}
 	
-	public static List<JJackStereoInputChannel> getStereoInputChannels() {
-		return getChannelsOfType(JJackStereoInputChannel.class);
-	}
-	
-	public static List<JJackStereoOutputChannel> getStereoOutputChannels() {
-		return getChannelsOfType(JJackStereoOutputChannel.class);
-	}
-	
 	public static <T extends JJackChannel> List<T> getChannelsOfType(Class<T> type) {
 		return channels.stream()
 				.filter(type::isInstance)
@@ -321,19 +339,27 @@ public class JJack extends Application {
 				.findFirst().orElse(null);
 	}
 	
-	public static JJackDefaultInputChannel createDefaultInputChannel() {
+	public static JJackSingleInputChannel createSingleInputChannel() {
 		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
-		JJackDefaultInputChannel ch = new JJackDefaultInputChannel(id);
+		JJackSingleInputChannel ch = new JJackSingleInputChannel(id);
 		channels.add(ch);
-		controller.addDefaultInputChannel(ch);
+		controller.addSingleInputChannel(ch);
 		return ch;
 	}
 	
-	public static JJackDefaultOutputChannel createDefaultOutputChannel() {
+	public static JJackSingleOutputChannel createSingleOutputChannel() {
 		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
-		JJackDefaultOutputChannel ch = new JJackDefaultOutputChannel(id);
+		JJackSingleOutputChannel ch = new JJackSingleOutputChannel(id);
 		channels.add(ch);
-		controller.addDefaultOutputChannel(ch);
+		controller.addSingleOutputChannel(ch);
+		return ch;
+	}
+	
+	public static JJackSingleComboChannel createSingleComboChannel() {
+		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
+		JJackSingleComboChannel ch = new JJackSingleComboChannel(id);
+		channels.add(ch);
+		controller.addSingleComboChannel(ch);
 		return ch;
 	}
 	
@@ -350,14 +376,6 @@ public class JJack extends Application {
 		JJackStereoOutputChannel ch = new JJackStereoOutputChannel(id);
 		channels.add(ch);
 		controller.addStereoOutputChannel(ch);
-		return ch;
-	}
-	
-	public static JJackDefaultComboChannel createComboChannel() {
-		int id = channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
-		JJackDefaultComboChannel ch = new JJackDefaultComboChannel(id);
-		channels.add(ch);
-		controller.addComboChannel(ch);
 		return ch;
 	}
 	
@@ -389,7 +407,7 @@ public class JJack extends Application {
 		resetChannels();
 		
 		for(String channel : cc.getKeys("channel")) {
-			var type = JJackChannelType.valueOf(cc.getString("channel." + channel + ".type", JJackChannelType.COMBO.name(), false));
+			var type = JJackChannelType.valueOf(cc.getString("channel." + channel + ".type", JJackChannelType.SINGLE_COMBO.name(), false));
 			
 			int channelID = Integer.parseInt(channel);
 			JJackChannel ch = getChannel(channelID);

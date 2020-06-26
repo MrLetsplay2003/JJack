@@ -24,6 +24,10 @@ public class JJackStereoPort {
 		return left.getOriginalClientName();
 	}
 	
+	public boolean isClosed() {
+		return left.isClosed() || right.isClosed();
+	}
+	
 	@Override
 	public String toString() {
 		return getName();

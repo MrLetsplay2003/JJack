@@ -24,9 +24,9 @@
         </Menu>
             <Menu mnemonicParsing="false" text="Edit">
               <items>
-                  <MenuItem mnemonicParsing="false" onAction="#addInputChannel" text="Add Input Channel" />
-                  <MenuItem mnemonicParsing="false" onAction="#addOutputChannel" text="Add Output Channel" />
-                  <MenuItem mnemonicParsing="false" onAction="#addComboChannel" text="Add Combined Channel" />
+                  <MenuItem mnemonicParsing="false" onAction="#addSingleInputChannel" text="Add Input Channel" />
+                  <MenuItem mnemonicParsing="false" onAction="#addSingleOutputChannel" text="Add Output Channel" />
+                  <MenuItem mnemonicParsing="false" onAction="#addSingleComboChannel" text="Add Combined Channel" />
                   <MenuItem mnemonicParsing="false" onAction="#addStereoInputChannel" text="Add Stereo Input Channel" />
                   <MenuItem mnemonicParsing="false" onAction="#addStereoOutputChannel" text="Add Stereo Output Channel" />
               </items>
@@ -40,10 +40,10 @@
     </MenuBar>
     <AnchorPane fx:id="mainPane" maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" style="-fx-background-color: #2f2f2f;" VBox.vgrow="ALWAYS">
          <children>
-            <fx:include fx:id="channel0" source="input-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
-            <fx:include fx:id="channel1" source="input-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="185.0" AnchorPane.topAnchor="10.0" />
-            <fx:include fx:id="channel2" source="input-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="360.0" AnchorPane.topAnchor="10.0" />
-            <fx:include fx:id="channel3" source="output-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="535.0" AnchorPane.topAnchor="10.0" />
+            <fx:include fx:id="channel0" source="stereo-input-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
+            <fx:include fx:id="channel1" source="stereo-input-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="185.0" AnchorPane.topAnchor="10.0" />
+            <fx:include fx:id="channel2" source="stereo-input-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="360.0" AnchorPane.topAnchor="10.0" />
+            <fx:include fx:id="channel3" source="stereo-output-channel.fxml" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="535.0" AnchorPane.topAnchor="10.0" />
          </children>
     </AnchorPane>
   </children>
