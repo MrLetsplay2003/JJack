@@ -91,19 +91,16 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 		FloatBuffer outLeft = FloatBuffer.allocate(numFrames);
 		FloatBuffer outRight = FloatBuffer.allocate(numFrames);
 		
-		boolean av = false;
 		for(JJackStereoInputChannel inC : JJack.getChannelsOfType(JJackStereoInputChannel.class)) {
 			if(inC.getInputPort() == null || !inC.getOutputs().contains(this)) continue;
 
 			FloatBuffer inLeft = inC.yieldLeft();
-			JJack.combine(outLeft, inLeft, av);
+			JJack.combine(outLeft, inLeft, false);
 			inLeft.rewind();
 			
 			FloatBuffer inRight = inC.yieldRight();
-			JJack.combine(outRight, inRight, av);
+			JJack.combine(outRight, inRight, false);
 			inRight.rewind();
-			
-			av = true;
 		}
 		
 		JJack.adjustVolume(outLeft, getVolume() / 100);
@@ -155,16 +152,16 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 	@Override
 	public JSONObject save() {
 		JSONObject o = JJackOutputChannel.super.save();
-//		o.set("output", getOutputPort() == null ? null : getOutputPort().getName());
+		o.set("output", getOutputPort() == null ? null : getOutputPort().getName());
 		return o;
 	}
 	
 	@Override
 	public void load(JSONObject object) {
 		JJackOutputChannel.super.load(object);
-//		getOutputPortProperty().set(JJack.getOutputPorts().stream()
-//				.filter(i -> i.getName().equals(object.getString("output")))
-//				.findFirst().orElse(null));
+		getOutputPortProperty().set(JJack.getStereoOutputPorts().stream()
+				.filter(i -> i.getName().equals(object.getString("output")))
+				.findFirst().orElse(null));
 	}
 
 }

@@ -150,10 +150,10 @@ public class JJackController {
 		JJack.stage.setWidth(720);
 		for(Node n : mainPane.lookupAll(".channel")) {
 			AnchorPane a = (AnchorPane) n;
-			if(!IntStream.range(0, JJack.DEFAULT_CHANNEL_COUNT).anyMatch(i -> a.getId().equals("channel" + i))) {
+//			if(!IntStream.range(0, JJack.DEFAULT_CHANNEL_COUNT).anyMatch(i -> a.getId().equals("channel" + i))) {
 				mainPane.getChildren().remove(a);
-				continue;
-			}
+//				continue;
+//			}
 		}
 	}
 	

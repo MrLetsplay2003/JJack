@@ -2,6 +2,7 @@ package me.mrletsplay.jjack.channel;
 
 import java.nio.FloatBuffer;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ListProperty;
@@ -12,6 +13,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.port.stereo.JJackStereoInputPort;
+import me.mrletsplay.mrcore.json.JSONArray;
 import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJackStereoInputChannel implements JJackInputChannel {
@@ -157,16 +159,21 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	@Override
 	public JSONObject save() {
 		JSONObject o = JJackInputChannel.super.save();
-//		o.set("input", getInputPort() == null ? null : getInputPort().getName());
+		o.set("input", getInputPort() == null ? null : getInputPort().getName());
+		o.set("outputs", new JSONArray(getOutputs().stream().map(out -> out.getID()).collect(Collectors.toList())));
 		return o;
 	}
 	
 	@Override
 	public void load(JSONObject object) {
 		JJackInputChannel.super.load(object);
-//		getInputPortProperty().set(JJack.getInputPorts().stream()
-//				.filter(i -> i.getName().equals(object.getString("input")))
-//				.findFirst().orElse(null));
+		getInputPortProperty().set(JJack.getStereoInputPorts().stream()
+				.filter(i -> i.getName().equals(object.getString("input")))
+				.findFirst().orElse(null));
+		
+		object.getJSONArray("outputs").stream()
+			.map(o -> ((Long) o).intValue())
+			.forEach(o -> getOutputs().add((JJackStereoOutputChannel) JJack.getChannel(o)));
 	}
 
 }

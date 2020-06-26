@@ -72,14 +72,12 @@ public class JJackSingleOutputChannel implements JJackOutputChannel {
 		
 		FloatBuffer out = FloatBuffer.allocate(numFrames);
 		
-		boolean av = false;
 		for(JJackSingleInputChannel inC : JJack.getChannelsOfType(JJackSingleInputChannel.class)) {
 			if(inC.getInputPort() == null || !inC.getOutputs().contains(this)) continue;
 
 			FloatBuffer in = inC.yieldData();
-			JJack.combine(out, in, av);
+			JJack.combine(out, in, false);
 			in.rewind();
-			av = true;
 		}
 		
 		JJack.adjustVolume(out, getVolume() / 100);
