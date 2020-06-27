@@ -14,6 +14,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import me.mrletsplay.jjack.JJack;
@@ -50,7 +51,8 @@ public class JJackController {
 
 	@FXML
 	void about(ActionEvent event) {
-		Alert alert = new Alert(AlertType.INFORMATION, "Made by MrLetsplay", ButtonType.OK);
+		Alert alert = new Alert(AlertType.INFORMATION, "Made by MrLetsplay\n\nIcon design by Palme11100", ButtonType.OK);
+		alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
 		alert.setTitle("About");
 		alert.setHeaderText("JJack");
 		alert.initOwner(JJack.stage);
@@ -159,10 +161,6 @@ public class JJackController {
 		}
 	}
 	
-	public void sortChannels() {
-		
-	}
-
 	@FXML
 	void loadConfiguration(ActionEvent event) {
 		FileChooser chooser = new FileChooser();
@@ -184,6 +182,8 @@ public class JJackController {
 		if(b.get() == ButtonType.YES) saveConfigurationAs(null);
 		
 		JJack.clearChannels();
+		
+		resetChannels();
 	}
 
 	@FXML
@@ -218,6 +218,13 @@ public class JJackController {
 		}
 		
 		JJack.saveConfiguration(f);
+	}
+	
+	private void resetChannels() {
+		JJack.createStereoInputChannel();
+		JJack.createStereoInputChannel();
+		JJack.createStereoInputChannel();
+		JJack.createStereoOutputChannel();
 	}
 	
 	@FXML

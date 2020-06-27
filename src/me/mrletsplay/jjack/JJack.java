@@ -23,6 +23,7 @@ import org.jaudiolibs.jnajack.JackStatus;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
@@ -51,8 +52,6 @@ import me.mrletsplay.mrcore.config.impl.DefaultFileCustomConfig;
 import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJack extends Application {
-	
-//	public static final int DEFAULT_CHANNEL_COUNT = 4;
 	
 	public static Stage stage;
 	
@@ -97,7 +96,9 @@ public class JJack extends Application {
 		client = Jack.getInstance().openClient("JJack", EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
 		
 		client.setProcessCallback((client, nframes) -> {
-			getOutputPorts().forEach(p -> {
+			List<JJackOutputPort> outPorts = new ArrayList<>(getOutputPorts());
+			
+			outPorts.forEach(p -> {
 				p.initOutput(nframes);
 			});
 			
@@ -105,7 +106,7 @@ public class JJack extends Application {
 				channel.process(client, nframes);
 			}
 			
-			getOutputPorts().forEach(p -> p.flushOutput());
+			outPorts.forEach(p -> p.flushOutput());
 			
 			for(JJackChannel ch : channels) {
 				ch.update();
@@ -176,6 +177,11 @@ public class JJack extends Application {
 			}
 			
 		}.start();
+		
+		String config = getParameters().getNamed().get("config");
+		if(config != null) {
+			Platform.runLater(() -> loadConfiguration(new File(config)));
+		}
 	}
 	
 	private static void registerPort(String portName, boolean isOutput) throws JackException {
@@ -340,7 +346,7 @@ public class JJack extends Application {
 	}
 	
 	public static int newChannelID() {
-		return channels.stream().mapToInt(JJackChannel::getID).max().getAsInt() + 1;
+		return channels.stream().mapToInt(JJackChannel::getID).max().orElse(-1) + 1;
 	}
 	
 	public static JJackSingleInputChannel createSingleInputChannel(int id) {
@@ -427,11 +433,8 @@ public class JJack extends Application {
 		
 		for(String channel : cc.getKeys("channel")) {
 			var type = JJackChannelType.valueOf(cc.getString("channel." + channel + ".type"));
-			
 			int channelID = Integer.parseInt(channel);
-			JJackChannel ch = getChannel(channelID);
-			
-			if(ch == null) ch = type.createChannel(channelID);
+			type.createChannel(channelID);
 		}
 		
 		for(String channel : cc.getKeys("channel")) {
