@@ -4,7 +4,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.stream.IntStream;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -141,19 +140,22 @@ public class JJackController {
 				continue;
 			}
 			
+			JJackChannel ch = JJack.getChannels().stream()
+					.filter(c -> a.getId().equals("channel" + c.getID()))
+					.findFirst().orElse(null);
+			
+			ch.getIDProperty().set(i);
+			a.setId("channel" + i);
+			
 			AnchorPane.setLeftAnchor(a, i * 175d + 10);
 			i++;
 		}
 	}
 	
-	public void resetChannels() {
-		JJack.stage.setWidth(720);
+	public void clearChannels() {
+		JJack.stage.setWidth(20);
 		for(Node n : mainPane.lookupAll(".channel")) {
-			AnchorPane a = (AnchorPane) n;
-//			if(!IntStream.range(0, JJack.DEFAULT_CHANNEL_COUNT).anyMatch(i -> a.getId().equals("channel" + i))) {
-				mainPane.getChildren().remove(a);
-//				continue;
-//			}
+			mainPane.getChildren().remove(n);
 		}
 	}
 	
@@ -181,7 +183,7 @@ public class JJackController {
 		
 		if(b.get() == ButtonType.YES) saveConfigurationAs(null);
 		
-		JJack.resetChannels();
+		JJack.clearChannels();
 	}
 
 	@FXML

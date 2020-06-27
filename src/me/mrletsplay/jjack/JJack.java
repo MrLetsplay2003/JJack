@@ -33,11 +33,11 @@ import javafx.stage.Stage;
 import me.mrletsplay.jjack.channel.JJackChannel;
 import me.mrletsplay.jjack.channel.JJackChannelType;
 import me.mrletsplay.jjack.channel.JJackComboChannel;
+import me.mrletsplay.jjack.channel.JJackInputChannel;
+import me.mrletsplay.jjack.channel.JJackOutputChannel;
 import me.mrletsplay.jjack.channel.JJackSingleComboChannel;
 import me.mrletsplay.jjack.channel.JJackSingleInputChannel;
 import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
-import me.mrletsplay.jjack.channel.JJackInputChannel;
-import me.mrletsplay.jjack.channel.JJackOutputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
 import me.mrletsplay.jjack.controller.JJackController;
@@ -52,7 +52,7 @@ import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJack extends Application {
 	
-	public static final int DEFAULT_CHANNEL_COUNT = 4;
+//	public static final int DEFAULT_CHANNEL_COUNT = 4;
 	
 	public static Stage stage;
 	
@@ -404,9 +404,9 @@ public class JJack extends Application {
 		controller.removeChannel(channel);
 	}
 	
-	public static void resetChannels() {
-//		channels.removeIf(ch -> ch.getID() >= DEFAULT_CHANNEL_COUNT);
-		controller.resetChannels();
+	public static void clearChannels() {
+		channels.clear();
+		controller.clearChannels();
 	}
 	
 	public static void saveConfiguration(File file) {
@@ -423,7 +423,7 @@ public class JJack extends Application {
 	public static void loadConfiguration(File file) {
 		FileCustomConfig cc = ConfigLoader.loadFileConfig(file);
 		
-		resetChannels();
+		clearChannels();
 		
 		for(String channel : cc.getKeys("channel")) {
 			var type = JJackChannelType.valueOf(cc.getString("channel." + channel + ".type"));

@@ -5,8 +5,10 @@ import java.nio.FloatBuffer;
 import org.jaudiolibs.jnajack.JackClient;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.port.JJackInputPort;
@@ -15,7 +17,7 @@ import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJackSingleComboChannel implements JJackComboChannel {
 	
-	private int id;
+	private IntegerProperty idProperty;
 	private ObjectProperty<JJackInputPort> inputPortProperty;
 	private ObjectProperty<JJackOutputPort> outputPortProperty;
 	private DoubleProperty volumeProperty;
@@ -23,7 +25,7 @@ public class JJackSingleComboChannel implements JJackComboChannel {
 	private DoubleProperty currentVolumeProperty;
 	
 	public JJackSingleComboChannel(int id) {
-		this.id = id;
+		this.idProperty = new SimpleIntegerProperty(id);
 		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputPortProperty = new SimpleObjectProperty<>();
 		this.volumeProperty = new SimpleDoubleProperty(100);
@@ -31,8 +33,8 @@ public class JJackSingleComboChannel implements JJackComboChannel {
 	}
 	
 	@Override
-	public int getID() {
-		return id;
+	public IntegerProperty getIDProperty() {
+		return idProperty;
 	}
 	
 	@Override

@@ -12,6 +12,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.util.StringConverter;
@@ -37,6 +38,9 @@ public class JJackSingleInputChannelController {
 
 	@FXML
 	private Slider volumeOut;
+	
+	@FXML
+	private Label channelIndicator;
 
 	protected JJackSingleInputChannel channel;
 	
@@ -47,6 +51,7 @@ public class JJackSingleInputChannelController {
 		volume.valueProperty().bindBidirectional(channel.getVolumeProperty());
 		inDevice.valueProperty().bindBidirectional(channel.getInputPortProperty());
 		inDevice.itemsProperty().bind(new SimpleListProperty<>(JJack.getInputPorts()));
+		channelIndicator.textProperty().bind(channel.getIDProperty().asString());
 	}
 
 	@FXML

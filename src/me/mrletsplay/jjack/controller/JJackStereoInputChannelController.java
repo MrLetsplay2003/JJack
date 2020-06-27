@@ -12,6 +12,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.util.StringConverter;
@@ -40,6 +41,9 @@ public class JJackStereoInputChannelController {
 
 	@FXML
 	private Slider volumeOutR;
+	
+	@FXML
+	private Label channelIndicator;
 
 	protected JJackStereoInputChannel channel;
 	
@@ -51,6 +55,7 @@ public class JJackStereoInputChannelController {
 		volume.valueProperty().bindBidirectional(channel.getVolumeProperty());
 		inDevice.valueProperty().bindBidirectional(channel.getInputPortProperty());
 		inDevice.itemsProperty().bind(new SimpleListProperty<>(JJack.getStereoInputPorts()));
+		channelIndicator.textProperty().bind(channel.getIDProperty().asString());
 	}
 
 	@FXML

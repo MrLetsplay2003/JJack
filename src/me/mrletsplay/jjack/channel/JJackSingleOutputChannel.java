@@ -5,31 +5,33 @@ import java.nio.FloatBuffer;
 import org.jaudiolibs.jnajack.JackClient;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJackSingleOutputChannel implements JJackOutputChannel {
-	
-	private int id;
+
+	private IntegerProperty idProperty;
 	private ObjectProperty<JJackOutputPort> outputPortProperty;
 	private DoubleProperty volumeProperty;
 	private double currentVolume;
 	private DoubleProperty currentVolumeProperty;
 	
 	public JJackSingleOutputChannel(int id) {
-		this.id = id;
+		this.idProperty = new SimpleIntegerProperty(id);
 		this.outputPortProperty = new SimpleObjectProperty<>();
 		this.volumeProperty = new SimpleDoubleProperty(100);
 		this.currentVolumeProperty = new SimpleDoubleProperty();
 	}
 	
 	@Override
-	public int getID() {
-		return id;
+	public IntegerProperty getIDProperty() {
+		return idProperty;
 	}
 	
 	@Override
@@ -103,11 +105,6 @@ public class JJackSingleOutputChannel implements JJackOutputChannel {
 	@Override
 	public void update() {
 		
-	}
-	
-	@Override
-	public String toString() {  
-		return getOutputPort().getName();
 	}
 	
 	@Override

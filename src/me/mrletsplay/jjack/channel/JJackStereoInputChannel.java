@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -17,8 +19,8 @@ import me.mrletsplay.mrcore.json.JSONArray;
 import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJackStereoInputChannel implements JJackInputChannel {
-	
-	private int id;
+
+	private IntegerProperty idProperty;
 	private ObjectProperty<JJackStereoInputPort> inputPortProperty;
 	private ListProperty<JJackStereoOutputChannel> outputsProperty;
 	private DoubleProperty volumeProperty;
@@ -34,7 +36,7 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 		currentRightVolumeProperty;
 	
 	public JJackStereoInputChannel(int id) {
-		this.id = id;
+		this.idProperty = new SimpleIntegerProperty(id);
 		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputsProperty = new SimpleListProperty<>(FXCollections.observableArrayList());
 		this.volumeProperty = new SimpleDoubleProperty(100);
@@ -44,8 +46,8 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	}
 	
 	@Override
-	public int getID() {
-		return id;
+	public IntegerProperty getIDProperty() {
+		return idProperty;
 	}
 	
 	@Override

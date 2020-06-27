@@ -7,6 +7,7 @@ import javafx.beans.property.SimpleListProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
@@ -31,6 +32,9 @@ public class JJackStereoOutputChannelController {
 
 	@FXML
 	private Slider volumeOutR;
+	
+	@FXML
+	private Label channelIndicator;
 
 	protected JJackStereoOutputChannel channel;
 	
@@ -42,6 +46,7 @@ public class JJackStereoOutputChannelController {
 		volume.valueProperty().bindBidirectional(channel.getVolumeProperty());
 		outDevice.valueProperty().bindBidirectional(channel.getOutputPortProperty());
 		outDevice.itemsProperty().bind(new SimpleListProperty<>(JJack.getStereoOutputPorts()));
+		channelIndicator.textProperty().bind(channel.getIDProperty().asString());
 	}
 
 	@FXML

@@ -1,11 +1,16 @@
 package me.mrletsplay.jjack.channel;
 
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import me.mrletsplay.mrcore.json.JSONObject;
 
 public interface JJackChannel {
 	
-	public int getID();
+	public IntegerProperty getIDProperty();
+	
+	public default int getID() {
+		return getIDProperty().get();
+	}
 	
 	public JJackChannelType getType();
 	

@@ -7,6 +7,7 @@ import javafx.beans.property.SimpleListProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import me.mrletsplay.jjack.JJack;
 import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
@@ -28,6 +29,9 @@ public class JJackSingleOutputChannelController {
 
 	@FXML
 	private Slider volumeOut;
+	
+	@FXML
+	private Label channelIndicator;
 
 	protected JJackSingleOutputChannel channel;
 	
@@ -38,6 +42,7 @@ public class JJackSingleOutputChannelController {
 		volume.valueProperty().bindBidirectional(channel.getVolumeProperty());
 		outDevice.valueProperty().bindBidirectional(channel.getOutputPortProperty());
 		outDevice.itemsProperty().bind(new SimpleListProperty<>(JJack.getOutputPorts()));
+		channelIndicator.textProperty().bind(channel.getIDProperty().asString());
 	}
 
 	@FXML
