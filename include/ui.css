@@ -78,7 +78,6 @@
 	-fx-background-color: white;
 	-fx-background-radius: 0;
 	-fx-text-fill: #2f2f2f;
-	/*-fx-background-radius: 50%;*/
 	-fx-padding: 0.5px 5px 0.5px 5px;
 }
 
@@ -86,10 +85,5 @@
 	-fx-background-color: white;
 	-fx-background-radius: 0;
 	-fx-text-fill: #2f2f2f;
-	/*-fx-background-radius: 50%;*/
 	-fx-padding: 0.5px 4px 0.5px 4px;
-}
-
-#channel0 .remove-button, #channel1 .remove-button, #channel2 .remove-button, #channel3 .remove-button {
-	/* visibility: hidden; */
 }
