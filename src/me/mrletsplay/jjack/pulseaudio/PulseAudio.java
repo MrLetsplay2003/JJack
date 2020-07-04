@@ -3,8 +3,11 @@ package me.mrletsplay.jjack.pulseaudio;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import me.mrletsplay.mrcore.io.IOUtils;
 import me.mrletsplay.mrcore.misc.FriendlyException;
@@ -23,6 +26,10 @@ public class PulseAudio {
 				continue;
 			}
 			
+			if(line.startsWith("\tsink: ")) {
+				sinkIn.setSink(Integer.parseInt(line.trim().substring("sink: ".length(), line.indexOf('<') - 1).trim()));
+			}
+			
 			if(line.startsWith("\t\t")) {
 				String[] kv = line.trim().split(" = ");
 				sinkIn.getProperties().put(kv[0], kv[1].substring(1, kv[1].length() - 1));
@@ -38,13 +45,22 @@ public class PulseAudio {
 		execute("pacmd", "move-sink-input", String.valueOf(input.getIndex()), String.valueOf(sink.getIndex()));
 	}
 	
-	public static PulseAudioSink createSink(String sinkName) throws Exception {
-		String id = execute("pactl", "load-module", "module-jack-sink", "client_name=" + sinkName, "connect=no");
+	public static PulseAudioSink createSink(String sinkName, Map<String, String> properties) throws Exception {
+		String id = execute("pactl", "load-module", "module-jack-sink",
+				"client_name=\"" + sinkName + "\"",
+				"connect=no",
+				"sink_properties=\"" + properties.entrySet().stream()
+					.map(en -> en.getKey() + "='" + en.getValue() + "'")
+					.collect(Collectors.joining()) + "\"");
 		if(id.isEmpty()) throw new FriendlyException("Failed to create sink (has the open file limit for pulseaudio been reached?)");
 		int sinkID = Integer.parseInt(id.trim());
 		return getSinks().stream()
 				.filter(s -> s.getModuleNumber() == sinkID)
 				.findFirst().orElseThrow(() -> new FriendlyException("Couldn't create sink"));
+	}
+	
+	public static PulseAudioSink createSink(String sinkName) throws Exception {
+		return createSink(sinkName, Collections.emptyMap());
 	}
 	
 	public static PulseAudioSink getSink(int index) {

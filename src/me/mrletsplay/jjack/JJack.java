@@ -5,10 +5,15 @@ import java.net.URL;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.jaudiolibs.jnajack.Jack;
@@ -29,6 +34,9 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import me.mrletsplay.jjack.channel.JJackChannel;
@@ -46,12 +54,17 @@ import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 import me.mrletsplay.jjack.port.stereo.JJackStereoInputPort;
 import me.mrletsplay.jjack.port.stereo.JJackStereoOutputPort;
+import me.mrletsplay.jjack.pulseaudio.PulseAudio;
+import me.mrletsplay.jjack.pulseaudio.PulseAudioSink;
+import me.mrletsplay.jjack.pulseaudio.PulseAudioSinkInput;
 import me.mrletsplay.mrcore.config.ConfigLoader;
 import me.mrletsplay.mrcore.config.FileCustomConfig;
 import me.mrletsplay.mrcore.config.impl.DefaultFileCustomConfig;
 import me.mrletsplay.mrcore.json.JSONObject;
 
 public class JJack extends Application {
+	
+	public static final String JACK_CLIENT_NAME = "JJack";
 	
 	public static Stage stage;
 	
@@ -62,15 +75,31 @@ public class JJack extends Application {
 	private static ObservableList<JJackStereoInputPort> stereoInputPorts;
 	private static ObservableList<JJackStereoOutputPort> stereoOutputPorts;
 	private static List<JJackChannel> channels;
+	private static ExecutorService executor;
 	
-	@SuppressWarnings("deprecation")
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		inputPorts = FXCollections.observableArrayList();
-		outputPorts = FXCollections.observableArrayList();
-		stereoInputPorts = FXCollections.observableArrayList();
-		stereoOutputPorts = FXCollections.observableArrayList();
-		channels = new ArrayList<>();
+		List<PulseAudioSink> leftoverSinks = PulseAudio.getSinks().stream()
+				.filter(s -> Objects.equals(s.getProperty("jjack.program_sink"), "true"))
+				.collect(Collectors.toList());
+		
+		if(!leftoverSinks.isEmpty()) {
+			Alert alert = new Alert(AlertType.INFORMATION, "JJack has found one or more existing JJack program sinks.\nThese could be left over from a crash or belong to another JJack instance.\n\nDo you want to remove them?", ButtonType.YES, ButtonType.NO);
+			alert.setTitle("JJack");
+			alert.setHeaderText("Found program sinks");
+			Optional<ButtonType> b = alert.showAndWait();
+			
+			if(b.isPresent() && b.get() == ButtonType.YES)
+				leftoverSinks.forEach(PulseAudio::removeSink);
+		}
+		
+		executor = Executors.newSingleThreadExecutor();
+		
+		inputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
+		outputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
+		stereoInputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
+		stereoOutputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
+		channels = Collections.synchronizedList(new ArrayList<>());
 		
 		stage = primaryStage;
 		
@@ -93,7 +122,7 @@ public class JJack extends Application {
 		primaryStage.setScene(sc);
 		primaryStage.show();
 		
-		client = Jack.getInstance().openClient("JJack", EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
+		client = Jack.getInstance().openClient(JACK_CLIENT_NAME, EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
 		
 		client.setProcessCallback((client, nframes) -> {
 			List<JJackOutputPort> outPorts = new ArrayList<>(getOutputPorts());
@@ -141,28 +170,28 @@ public class JJack extends Application {
 			public void portRegistered(JackClient client, String portFullName) {
 				if(client == null) return;
 				
-				new Thread(() -> {
+				executor.execute(() -> {
 					try {
-						String[] outPorts = Jack.getInstance().getPorts(null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput));
-						boolean isOutput = Arrays.binarySearch(outPorts, portFullName) >= 0;
+						String[] outPorts = Jack.getInstance().getPorts(client, null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput));
+						boolean isOutput = Arrays.asList(outPorts).contains(portFullName);
 						
 						registerPort(portFullName, isOutput);
 						createStereoChannels();
-					}catch(JackException e) {
+					}catch(Exception e) {
 						e.printStackTrace();
 					}
-				}).start();
+				});
 			}
 		});
 		
 		client.activate();
 		
-		String[] outputPorts = Jack.getInstance().getPorts(null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput));
+		String[] outputPorts = Jack.getInstance().getPorts(client, null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput));
 		for(String port : outputPorts) {
 			registerPort(port, true);
 		}
 
-		String[] inputPorts = Jack.getInstance().getPorts(null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsInput));
+		String[] inputPorts = Jack.getInstance().getPorts(client, null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsInput));
 		for(String port : inputPorts) {
 			registerPort(port, false);
 		}
@@ -182,11 +211,19 @@ public class JJack extends Application {
 		if(config != null) {
 			Platform.runLater(() -> loadConfiguration(new File(config)));
 		}
+		
+		Map<String, String> props = new HashMap<>();
+		props.put("jjack.program_sink", "true");
+		
+		for(PulseAudioSinkInput sI : PulseAudio.getSinkInputs()) {
+			PulseAudioSink programSink = PulseAudio.createSink(sI.getName(), props);
+			PulseAudio.moveSinkInput(sI, programSink);
+		}
 	}
 	
 	private static void registerPort(String portName, boolean isOutput) throws JackException {
 		String portClient = portName.split(":")[0];
-		if(portClient.equals(client.getName())) return;
+		if(portClient.equals(client.getName()) || portClient.startsWith(JACK_CLIENT_NAME)) return;
 		
 		if(isOutput) {
 			JackPort p = client.registerPort(portName, JackPortType.AUDIO, JackPortFlags.JackPortIsInput);
@@ -209,7 +246,7 @@ public class JJack extends Application {
 		outputPorts.remove(port);
 	}
 	
-	private static void createStereoChannels() {
+	private synchronized static void createStereoChannels() {
 		createLeftStereoChannels();
 		createRightStereoChannels();
 	}
@@ -236,7 +273,7 @@ public class JJack extends Application {
 	
 	private static void createRightStereoChannels() {
 		Map<String, List<JJackOutputPort>> portMap = new HashMap<>();
-		for(JJackOutputPort port : outputPorts) {
+		for(JJackOutputPort port : new ArrayList<>(outputPorts)) {
 			String portClient = port.getOriginalClientName();
 			List<JJackOutputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
 			ports.add(port);
