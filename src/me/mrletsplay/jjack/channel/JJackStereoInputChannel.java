@@ -24,6 +24,7 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	private ObjectProperty<JJackStereoInputPort> inputPortProperty;
 	private ListProperty<JJackStereoOutputChannel> outputsProperty;
 	private DoubleProperty volumeProperty;
+	private DoubleProperty maxVolumeProperty;
 	
 	private double
 		currentVolume,
@@ -40,6 +41,7 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputsProperty = new SimpleListProperty<>(FXCollections.observableArrayList());
 		this.volumeProperty = new SimpleDoubleProperty(100);
+		this.maxVolumeProperty = new SimpleDoubleProperty();
 		this.currentVolumeProperty = new SimpleDoubleProperty();
 		this.currentLeftVolumeProperty = new SimpleDoubleProperty();
 		this.currentRightVolumeProperty = new SimpleDoubleProperty();
@@ -90,6 +92,11 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	}
 	
 	@Override
+	public DoubleProperty getMaxVolumeProperty() {
+		return maxVolumeProperty;
+	}
+	
+	@Override
 	public DoubleProperty getCurrentVolumeProperty() {
 		return currentVolumeProperty;
 	}
@@ -127,7 +134,10 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 		
 		if(getInputPort() == null) return;
 		
-		FloatBuffer leftIn = getInputPort().getLeft().getJackPort().getFloatBuffer();
+		FloatBuffer lIn = getInputPort().getLeft().getJackPort().getFloatBuffer();
+		FloatBuffer leftIn = FloatBuffer.allocate(lIn.remaining());
+		leftIn.put(lIn);
+		lIn.rewind();
 		
 		JJack.adjustVolume(leftIn, getVolume() / 100);
 		
@@ -141,7 +151,10 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 			currentLeftVolume = Math.min(leftVolume, 100);
 		}
 		
-		FloatBuffer rightIn = getInputPort().getRight().getJackPort().getFloatBuffer();
+		FloatBuffer rIn = getInputPort().getRight().getJackPort().getFloatBuffer();
+		FloatBuffer rightIn = FloatBuffer.allocate(rIn.remaining());
+		rightIn.put(rIn);
+		rIn.rewind();
 		
 		JJack.adjustVolume(rightIn, getVolume() / 100);
 		

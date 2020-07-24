@@ -2,7 +2,7 @@
 	-fx-background-radius: 0;
 	-fx-outline: 0;
 	-fx-focus-color: transparent;
-	-fx-background-color: lightgray;
+	-fx-background-color: rgb(180, 180, 180);
 }
 
 .tab:selected {
@@ -14,4 +14,19 @@
 .tab-pane .tab-header-area .headers-region {
 	-fx-border-width: 0px 0px 1px 0px;
 	-fx-border-color: white;
+}
+
+.check-box .box {
+	-fx-background-color: white;
+	-fx-background-radius: 0;
+	-fx-border-radius: 1px;
+	-fx-border-color: gray;
+}
+
+.check-box:armed .box {
+	-fx-background-color: lightgray;
+}
+
+.centered-label {
+	-fx-text-alignment: center;
 }

@@ -19,6 +19,7 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 	private IntegerProperty idProperty;
 	private ObjectProperty<JJackStereoOutputPort> outputPortProperty;
 	private DoubleProperty volumeProperty;
+	private DoubleProperty maxVolumeProperty;
 	
 	private double
 		currentVolume,
@@ -34,6 +35,7 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 		this.idProperty = new SimpleIntegerProperty(id);
 		this.outputPortProperty = new SimpleObjectProperty<>();
 		this.volumeProperty = new SimpleDoubleProperty(100);
+		this.maxVolumeProperty = new SimpleDoubleProperty();
 		this.currentVolumeProperty = new SimpleDoubleProperty();
 		this.currentLeftVolumeProperty = new SimpleDoubleProperty();
 		this.currentRightVolumeProperty = new SimpleDoubleProperty();
@@ -69,6 +71,11 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 	@Override
 	public DoubleProperty getVolumeProperty() {
 		return volumeProperty;
+	}
+	
+	@Override
+	public DoubleProperty getMaxVolumeProperty() {
+		return maxVolumeProperty;
 	}
 	
 	@Override

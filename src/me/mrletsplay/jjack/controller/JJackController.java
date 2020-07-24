@@ -188,11 +188,7 @@ public class JJackController {
 
 	@FXML
 	void preferences(ActionEvent event) {
-		Alert alert = new Alert(AlertType.INFORMATION, "Coming soon", ButtonType.OK);
-		alert.setTitle("Preferences");
-		alert.setHeaderText("JJack");
-		alert.initOwner(JJack.stage);
-		alert.show();
+		JJack.preferencesStage.show();
 	}
 
 	@FXML

@@ -40,6 +40,8 @@ public class JJackSingleOutputChannelController {
 		
 		volumeOut.valueProperty().bind(channel.getCurrentVolumeProperty());
 		volume.valueProperty().bindBidirectional(channel.getVolumeProperty());
+		channel.setMaxVolume(volume.getMax());
+		volume.maxProperty().bind(channel.getMaxVolumeProperty());
 		outDevice.valueProperty().bindBidirectional(channel.getOutputPortProperty());
 		outDevice.itemsProperty().bind(new SimpleListProperty<>(JJack.getOutputPorts()));
 		channelIndicator.textProperty().bind(channel.getIDProperty().asString());

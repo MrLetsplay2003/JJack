@@ -67,6 +67,7 @@ public class JJack extends Application {
 	public static final String JACK_CLIENT_NAME = "JJack";
 	
 	public static Stage stage;
+	public static Stage preferencesStage;
 	
 	private static JackClient client;
 	private static JJackController controller;
@@ -76,6 +77,9 @@ public class JJack extends Application {
 	private static ObservableList<JJackStereoOutputPort> stereoOutputPorts;
 	private static List<JJackChannel> channels;
 	private static ExecutorService executor;
+	
+	private static boolean allowOveramplification;
+	private static boolean useProgramPorts;
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -121,6 +125,23 @@ public class JJack extends Application {
 		primaryStage.setResizable(false);
 		primaryStage.setScene(sc);
 		primaryStage.show();
+		
+		URL prefsURL = JJack.class.getResource("/include/preferences.fxml");
+		if(prefsURL == null) prefsURL = new File("./include/preferences.fxml").toURI().toURL();
+		FXMLLoader prefsL = new FXMLLoader(prefsURL);
+		Parent prefsPr = prefsL.load(prefsURL.openStream());
+		
+		Scene prefsScene = new Scene(prefsPr, 720, 480);
+		
+		preferencesStage = new Stage();
+		preferencesStage.setTitle("JJack - Preferences");
+		preferencesStage.setScene(prefsScene);
+		preferencesStage.initOwner(JJack.stage);
+		preferencesStage.setResizable(false);
+		
+		preferencesStage.setOnCloseRequest(e -> {
+			preferencesStage.hide();
+		});
 		
 		client = Jack.getInstance().openClient(JACK_CLIENT_NAME, EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
 		
@@ -460,6 +481,8 @@ public class JJack extends Application {
 			cc.set("channel." + channel.getID() + ".properties", channel.save());
 		}
 		
+		cc.set("preferences.allow-overamplification", allowOveramplification);
+		
 		cc.saveToFile();
 	}
 	
@@ -481,6 +504,32 @@ public class JJack extends Application {
 			JSONObject props = cc.getGeneric("channel." + channel + ".properties", JSONObject.class);
 			ch.load(props);
 		}
+		
+		allowOveramplification = cc.getBoolean("preferences.allow-overamplification");
+	}
+	
+	public static void setAllowOveramplification(boolean allowOveramplification) {
+		JJack.allowOveramplification = allowOveramplification;
+		
+		if(allowOveramplification) {
+			JJack.getChannels().forEach(c -> c.setMaxVolume(150));
+		}else {
+			JJack.getChannels().forEach(c -> c.setMaxVolume(125));
+		}
+	}
+	
+	public static boolean isAllowOveramplification() {
+		return allowOveramplification;
+	}
+	
+	public static void setUseProgramPorts(boolean useProgramPorts) {
+		JJack.useProgramPorts = useProgramPorts;
+		
+		// TODO: create/delete program sinks + ports
+	}
+	
+	public static boolean isUseProgramPorts() {
+		return useProgramPorts;
 	}
 
 }

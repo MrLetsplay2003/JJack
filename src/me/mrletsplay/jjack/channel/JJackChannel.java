@@ -24,6 +24,16 @@ public interface JJackChannel {
 		return getVolumeProperty().get();
 	}
 	
+	public DoubleProperty getMaxVolumeProperty();
+	
+	public default void setMaxVolume(double volume) {
+		getMaxVolumeProperty().set(volume);
+	}
+	
+	public default double getMaxVolume() {
+		return getMaxVolumeProperty().get();
+	}
+	
 	public DoubleProperty getCurrentVolumeProperty();
 	
 	public default double getCurrentVolume() {

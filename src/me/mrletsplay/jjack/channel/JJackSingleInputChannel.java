@@ -24,6 +24,7 @@ public class JJackSingleInputChannel implements JJackInputChannel {
 	private ObjectProperty<JJackInputPort> inputPortProperty;
 	private ListProperty<JJackSingleOutputChannel> outputsProperty;
 	private DoubleProperty volumeProperty;
+	private DoubleProperty maxVolumeProperty;
 	private double currentVolume;
 	private DoubleProperty currentVolumeProperty;
 	
@@ -32,6 +33,7 @@ public class JJackSingleInputChannel implements JJackInputChannel {
 		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputsProperty = new SimpleListProperty<>(FXCollections.observableArrayList());
 		this.volumeProperty = new SimpleDoubleProperty(100);
+		this.maxVolumeProperty = new SimpleDoubleProperty();
 		this.currentVolumeProperty = new SimpleDoubleProperty();
 	}
 	
@@ -80,6 +82,11 @@ public class JJackSingleInputChannel implements JJackInputChannel {
 	}
 	
 	@Override
+	public DoubleProperty getMaxVolumeProperty() {
+		return maxVolumeProperty;
+	}
+	
+	@Override
 	public DoubleProperty getCurrentVolumeProperty() {
 		return currentVolumeProperty;
 	}
@@ -100,8 +107,11 @@ public class JJackSingleInputChannel implements JJackInputChannel {
 		if(getInputPort() != null && getInputPort().isClosed()) setInputPort(null);
 		
 		if(getInputPort() == null) return;
-		
-		FloatBuffer in = getInputPort().getJackPort().getFloatBuffer();
+
+		FloatBuffer oIn = getInputPort().getJackPort().getFloatBuffer().duplicate();
+		FloatBuffer in = FloatBuffer.allocate(oIn.remaining());
+		in.put(oIn);
+		oIn.rewind();
 		
 		JJack.adjustVolume(in, getVolume() / 100);
 		

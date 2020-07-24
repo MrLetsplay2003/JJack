@@ -53,6 +53,8 @@ public class JJackStereoInputChannelController {
 		volumeOutL.valueProperty().bind(channel.getCurrentLeftVolumeProperty());
 		volumeOutR.valueProperty().bind(channel.getCurrentRightVolumeProperty());
 		volume.valueProperty().bindBidirectional(channel.getVolumeProperty());
+		channel.setMaxVolume(volume.getMax());
+		volume.maxProperty().bind(channel.getMaxVolumeProperty());
 		inDevice.valueProperty().bindBidirectional(channel.getInputPortProperty());
 		inDevice.itemsProperty().bind(new SimpleListProperty<>(JJack.getStereoInputPorts()));
 		channelIndicator.textProperty().bind(channel.getIDProperty().asString());

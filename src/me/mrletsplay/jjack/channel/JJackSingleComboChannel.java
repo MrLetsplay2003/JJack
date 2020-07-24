@@ -21,6 +21,7 @@ public class JJackSingleComboChannel implements JJackComboChannel {
 	private ObjectProperty<JJackInputPort> inputPortProperty;
 	private ObjectProperty<JJackOutputPort> outputPortProperty;
 	private DoubleProperty volumeProperty;
+	private DoubleProperty maxVolumeProperty;
 	private double currentVolume;
 	private DoubleProperty currentVolumeProperty;
 	
@@ -29,6 +30,7 @@ public class JJackSingleComboChannel implements JJackComboChannel {
 		this.inputPortProperty = new SimpleObjectProperty<>();
 		this.outputPortProperty = new SimpleObjectProperty<>();
 		this.volumeProperty = new SimpleDoubleProperty(100);
+		this.maxVolumeProperty = new SimpleDoubleProperty();
 		this.currentVolumeProperty = new SimpleDoubleProperty();
 	}
 	
@@ -69,6 +71,11 @@ public class JJackSingleComboChannel implements JJackComboChannel {
 	@Override
 	public DoubleProperty getVolumeProperty() {
 		return volumeProperty;
+	}
+	
+	@Override
+	public DoubleProperty getMaxVolumeProperty() {
+		return maxVolumeProperty;
 	}
 	
 	@Override
