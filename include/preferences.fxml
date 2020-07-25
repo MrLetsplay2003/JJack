@@ -15,7 +15,7 @@
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
                         <CheckBox fx:id="allowOveramplification" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Allow higher over-amplification (may result in clipping)" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
-                        <CheckBox fx:id="useProgramPorts" layoutX="24.0" layoutY="24.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Move program outputs to separate ports" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="35.0" />
+                        <CheckBox fx:id="useProgramPorts" layoutX="24.0" layoutY="24.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Move program outputs to separate ports (may break other JJack instances)" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="35.0" />
                      </children></AnchorPane>
             </content>
           </Tab>
