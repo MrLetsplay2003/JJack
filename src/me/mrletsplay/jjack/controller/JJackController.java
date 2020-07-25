@@ -142,9 +142,12 @@ public class JJackController {
 				continue;
 			}
 			
-			JJackChannel ch = JJack.getChannels().stream()
-					.filter(c -> a.getId().equals("channel" + c.getID()))
-					.findFirst().orElse(null);
+			JJackChannel ch;
+			synchronized (JJack.getChannels()) {
+				ch = JJack.getChannels().stream()
+						.filter(c -> a.getId().equals("channel" + c.getID()))
+						.findFirst().orElse(null);
+			}
 			
 			ch.getIDProperty().set(i);
 			a.setId("channel" + i);

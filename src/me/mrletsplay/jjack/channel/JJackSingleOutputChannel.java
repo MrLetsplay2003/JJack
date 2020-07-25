@@ -124,9 +124,12 @@ public class JJackSingleOutputChannel implements JJackOutputChannel {
 	@Override
 	public void load(JSONObject object) {
 		JJackOutputChannel.super.load(object);
-		getOutputPortProperty().set(JJack.getOutputPorts().stream()
-				.filter(i -> i.getName().equals(object.getString("output")))
-				.findFirst().orElse(null));
+		
+		synchronized (JJack.getOutputPorts()) {
+			getOutputPortProperty().set(JJack.getOutputPorts().stream()
+					.filter(i -> i.getName().equals(object.getString("output")))
+					.findFirst().orElse(null));
+		}
 	}
 
 }

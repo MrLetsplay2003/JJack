@@ -163,9 +163,12 @@ public class JJackStereoOutputChannel implements JJackOutputChannel {
 	@Override
 	public void load(JSONObject object) {
 		JJackOutputChannel.super.load(object);
-		getOutputPortProperty().set(JJack.getStereoOutputPorts().stream()
-				.filter(i -> i.getName().equals(object.getString("output")))
-				.findFirst().orElse(null));
+		
+		synchronized (JJack.getStereoOutputPorts()) {
+			getOutputPortProperty().set(JJack.getStereoOutputPorts().stream()
+					.filter(i -> i.getName().equals(object.getString("output")))
+					.findFirst().orElse(null));
+		}
 	}
 
 }

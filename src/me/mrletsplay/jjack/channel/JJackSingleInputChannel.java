@@ -137,9 +137,12 @@ public class JJackSingleInputChannel implements JJackInputChannel {
 	@Override
 	public void load(JSONObject object) {
 		JJackInputChannel.super.load(object);
-		getInputPortProperty().set(JJack.getInputPorts().stream()
-				.filter(i -> i.getName().equals(object.getString("input")))
-				.findFirst().orElse(null));
+		
+		synchronized (JJack.getInputPorts()) {
+			getInputPortProperty().set(JJack.getInputPorts().stream()
+					.filter(i -> i.getName().equals(object.getString("input")))
+					.findFirst().orElse(null));
+		}
 		
 		object.getJSONArray("outputs").stream()
 			.map(o -> ((Long) o).intValue())

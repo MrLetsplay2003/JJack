@@ -132,12 +132,18 @@ public class JJackSingleComboChannel implements JJackComboChannel {
 	@Override
 	public void load(JSONObject object) {
 		JJackComboChannel.super.load(object);
-		getInputPortProperty().set(JJack.getInputPorts().stream()
-				.filter(i -> i.getName().equals(object.getString("input")))
-				.findFirst().orElse(null));
-		getOutputPortProperty().set(JJack.getOutputPorts().stream()
-				.filter(i -> i.getName().equals(object.getString("output")))
-				.findFirst().orElse(null));
+		
+		synchronized (JJack.getInputPorts()) {
+			getInputPortProperty().set(JJack.getInputPorts().stream()
+					.filter(i -> i.getName().equals(object.getString("input")))
+					.findFirst().orElse(null));
+		}
+		
+		synchronized (JJack.getOutputPorts()) {
+			getOutputPortProperty().set(JJack.getOutputPorts().stream()
+					.filter(i -> i.getName().equals(object.getString("output")))
+					.findFirst().orElse(null));
+		}
 	}
 	
 }

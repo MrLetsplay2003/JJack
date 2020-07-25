@@ -45,7 +45,7 @@ public class PulseAudio {
 		execute("pacmd", "move-sink-input", String.valueOf(input.getIndex()), String.valueOf(sink.getIndex()));
 	}
 	
-	public static PulseAudioSink createSink(String sinkName, Map<String, String> properties) throws Exception {
+	public static PulseAudioSink createSink(String sinkName, Map<String, String> properties) throws FriendlyException {
 		String id = execute("pactl", "load-module", "module-jack-sink",
 				"client_name=\"" + sinkName + "\"",
 				"connect=no",

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import org.jaudiolibs.jnajack.JackClient;
 import org.jaudiolibs.jnajack.JackException;
 import org.jaudiolibs.jnajack.JackOptions;
 import org.jaudiolibs.jnajack.JackPort;
+import org.jaudiolibs.jnajack.JackPortConnectCallback;
 import org.jaudiolibs.jnajack.JackPortFlags;
 import org.jaudiolibs.jnajack.JackPortRegistrationCallback;
 import org.jaudiolibs.jnajack.JackPortType;
@@ -65,6 +67,7 @@ import me.mrletsplay.mrcore.json.JSONObject;
 public class JJack extends Application {
 	
 	public static final String JACK_CLIENT_NAME = "JJack";
+	public static final UUID INSTANCE_ID = UUID.randomUUID();
 	
 	public static Stage stage;
 	public static Stage preferencesStage;
@@ -158,7 +161,7 @@ public class JJack extends Application {
 			
 			outPorts.forEach(p -> p.flushOutput());
 			
-			for(JJackChannel ch : channels) {
+			for(JJackChannel ch : new ArrayList<>(channels)) {
 				ch.update();
 			}
 			return true;
@@ -168,22 +171,36 @@ public class JJack extends Application {
 			
 			@Override
 			public void portUnregistered(JackClient client, String portFullName) {
-				JJackInputPort ip = inputPorts.stream()
-						.filter(pt -> pt.getName().equals(portFullName))
-						.findFirst().orElse(null);
-				
-				if(ip != null) {
-					unregisterInputPort(ip);
-					stereoInputPorts.removeIf(s -> s.isClosed());
+				JJackInputPort ip;
+				synchronized (inputPorts) {
+					ip = inputPorts.stream()
+							.filter(pt -> pt.getName().equals(portFullName))
+							.findFirst().orElse(null);
 				}
 				
-				JJackOutputPort op = outputPorts.stream()
-						.filter(pt -> pt.getName().equals(portFullName))
-						.findFirst().orElse(null);
+				if(ip != null) {
+					Platform.runLater(() -> {
+						unregisterInputPort(ip);
+						synchronized (stereoInputPorts) {
+							stereoInputPorts.removeIf(s -> s.isClosed());
+						}
+					});
+				}
+				
+				JJackOutputPort op;
+				synchronized (outputPorts) {
+					op = outputPorts.stream()
+							.filter(pt -> pt.getName().equals(portFullName))
+							.findFirst().orElse(null);
+				}
 				
 				if(op != null) {
-					unregisterOutputPort(op);
-					stereoOutputPorts.removeIf(s -> s.isClosed());
+					Platform.runLater(() -> {
+						unregisterOutputPort(op);
+						synchronized (stereoOutputPorts) {
+							stereoOutputPorts.removeIf(s -> s.isClosed());
+						}
+					});
 				}
 			}
 			
@@ -202,6 +219,20 @@ public class JJack extends Application {
 						e.printStackTrace();
 					}
 				});
+			}
+		});
+		
+		client.setPortConnectCallback(new JackPortConnectCallback() {
+			
+			@Override
+			public void portsDisconnected(JackClient client, String portName1, String portName2) {
+				
+			}
+			
+			@Override
+			public void portsConnected(JackClient client, String portName1, String portName2) {
+				// TODO Auto-generated method stub
+				
 			}
 		});
 		
@@ -232,14 +263,6 @@ public class JJack extends Application {
 		if(config != null) {
 			Platform.runLater(() -> loadConfiguration(new File(config)));
 		}
-		
-		Map<String, String> props = new HashMap<>();
-		props.put("jjack.program_sink", "true");
-		
-		for(PulseAudioSinkInput sI : PulseAudio.getSinkInputs()) {
-			PulseAudioSink programSink = PulseAudio.createSink(sI.getName(), props);
-			PulseAudio.moveSinkInput(sI, programSink);
-		}
 	}
 	
 	private static void registerPort(String portName, boolean isOutput) throws JackException {
@@ -249,22 +272,34 @@ public class JJack extends Application {
 		if(isOutput) {
 			JackPort p = client.registerPort(portName, JackPortType.AUDIO, JackPortFlags.JackPortIsInput);
 			Jack.getInstance().connect(client, portName, p.getName());
-			JJack.inputPorts.add(new JJackInputPort(p.getShortName(), p));
+			inputPorts.add(new JJackInputPort(p.getShortName(), p));
 		}else {
 			JackPort p = client.registerPort(portName, JackPortType.AUDIO, JackPortFlags.JackPortIsOutput);
 			Jack.getInstance().connect(client, p.getName(), portName);
-			JJack.outputPorts.add(new JJackOutputPort(p.getShortName(), p));
+			outputPorts.add(new JJackOutputPort(p.getShortName(), p));
 		}
 	}
 	
 	private static void unregisterInputPort(JJackInputPort port) {
 		port.close();
 		inputPorts.remove(port);
+		
+		try {
+			client.unregisterPort(port.getJackPort());
+		} catch (JackException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private static void unregisterOutputPort(JJackOutputPort port) {
 		port.close();
 		outputPorts.remove(port);
+		
+		try {
+			client.unregisterPort(port.getJackPort());
+		} catch (JackException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private synchronized static void createStereoChannels() {
@@ -274,19 +309,25 @@ public class JJack extends Application {
 	
 	private static void createLeftStereoChannels() {
 		Map<String, List<JJackInputPort>> portMap = new HashMap<>();
-		for(JJackInputPort port : inputPorts) {
-			String portClient = port.getOriginalClientName();
-			List<JJackInputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
-			ports.add(port);
-			portMap.put(portClient, ports);
+		
+		synchronized (inputPorts) {
+			for(JJackInputPort port : inputPorts) {
+				String portClient = port.getOriginalClientName();
+				List<JJackInputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
+				ports.add(port);
+				portMap.put(portClient, ports);
+			}
 		}
 		
 		for(String client : portMap.keySet()) {
 			List<JJackInputPort> ports = portMap.get(client);
 			if(ports.size() != 2) continue;
-			if(stereoInputPorts.stream().anyMatch(s -> (s.getLeft() == ports.get(0) && s.getRight() == ports.get(1))
-						|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
-				continue;
+			
+			synchronized (stereoInputPorts) {
+				if(stereoInputPorts.stream().anyMatch(s -> (s.getLeft() == ports.get(0) && s.getRight() == ports.get(1))
+							|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
+					continue;
+			}
 			
 			stereoInputPorts.add(new JJackStereoInputPort(ports.get(0), ports.get(1)));
 		}
@@ -294,20 +335,26 @@ public class JJack extends Application {
 	
 	private static void createRightStereoChannels() {
 		Map<String, List<JJackOutputPort>> portMap = new HashMap<>();
-		for(JJackOutputPort port : new ArrayList<>(outputPorts)) {
-			String portClient = port.getOriginalClientName();
-			List<JJackOutputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
-			ports.add(port);
-			portMap.put(portClient, ports);
+		
+		synchronized (outputPorts) {
+			for(JJackOutputPort port : outputPorts) {
+				String portClient = port.getOriginalClientName();
+				List<JJackOutputPort> ports = portMap.getOrDefault(portClient, new ArrayList<>());
+				ports.add(port);
+				portMap.put(portClient, ports);
+			}
 		}
 		
 		for(String client : portMap.keySet()) {
 			List<JJackOutputPort> ports = portMap.get(client);
 			if(ports.size() != 2) continue;
-			if(stereoOutputPorts.stream().anyMatch(s -> (s.getLeft() == ports.get(0) && s.getRight() == ports.get(1))
-						|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
-				continue;
 			
+			synchronized (stereoOutputPorts) {
+				if(stereoOutputPorts.stream().anyMatch(s -> (s.getLeft() == ports.get(0) && s.getRight() == ports.get(1))
+							|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
+					continue;
+			}
+
 			stereoOutputPorts.add(new JJackStereoOutputPort(ports.get(0), ports.get(1)));
 		}
 	}
@@ -350,8 +397,16 @@ public class JJack extends Application {
 	}
 	
 	public static void exit() {
+		removeProgramSinks();
 		client.close();
 		System.exit(0);
+	}
+	
+	private static void removeProgramSinks() {
+		PulseAudio.getSinks().stream()
+			.filter(s -> Objects.equals(s.getProperty("jjack.program_sink"), "true")
+					&& Objects.equals(s.getProperty("jjack.instance_id"), INSTANCE_ID.toString()))
+			.forEach(PulseAudio::removeSink);
 	}
 	
 	public static JackClient getClient() {
@@ -391,20 +446,26 @@ public class JJack extends Application {
 	}
 	
 	public static <T extends JJackChannel> List<T> getChannelsOfType(Class<T> type) {
-		return channels.stream()
-				.filter(type::isInstance)
-				.map(type::cast)
-				.collect(Collectors.toList());
+		synchronized (channels) {
+			return channels.stream()
+					.filter(type::isInstance)
+					.map(type::cast)
+					.collect(Collectors.toList());
+		}
 	}
 	
 	public static JJackChannel getChannel(int channel) {
-		return channels.stream()
-				.filter(ch -> ch.getID() == channel)
-				.findFirst().orElse(null);
+		synchronized (channels) {
+			return channels.stream()
+					.filter(ch -> ch.getID() == channel)
+					.findFirst().orElse(null);
+		}
 	}
 	
 	public static int newChannelID() {
-		return channels.stream().mapToInt(JJackChannel::getID).max().orElse(-1) + 1;
+		synchronized (channels) {
+			return channels.stream().mapToInt(JJackChannel::getID).max().orElse(-1) + 1;
+		}
 	}
 	
 	public static JJackSingleInputChannel createSingleInputChannel(int id) {
@@ -463,7 +524,9 @@ public class JJack extends Application {
 	}
 	
 	public static void removeChannel(int channel) {
-		channels.removeIf(ch -> ch.getID() == channel);
+		synchronized (channels) {
+			channels.removeIf(ch -> ch.getID() == channel);
+		}
 		
 		controller.removeChannel(channel);
 	}
@@ -476,9 +539,11 @@ public class JJack extends Application {
 	public static void saveConfiguration(File file) {
 		FileCustomConfig cc = new DefaultFileCustomConfig(file);
 		
-		for(JJackChannel channel : channels) {
-			cc.set("channel." + channel.getID() + ".type", channel.getType().name());
-			cc.set("channel." + channel.getID() + ".properties", channel.save());
+		synchronized (channels) {
+			for(JJackChannel channel : channels) {
+				cc.set("channel." + channel.getID() + ".type", channel.getType().name());
+				cc.set("channel." + channel.getID() + ".properties", channel.save());
+			}
 		}
 		
 		cc.set("preferences.allow-overamplification", allowOveramplification);
@@ -511,10 +576,12 @@ public class JJack extends Application {
 	public static void setAllowOveramplification(boolean allowOveramplification) {
 		JJack.allowOveramplification = allowOveramplification;
 		
-		if(allowOveramplification) {
-			JJack.getChannels().forEach(c -> c.setMaxVolume(150));
-		}else {
-			JJack.getChannels().forEach(c -> c.setMaxVolume(125));
+		synchronized (JJack.getChannels()) {
+			if(allowOveramplification) {
+				JJack.getChannels().forEach(c -> c.setMaxVolume(150));
+			}else {
+				JJack.getChannels().forEach(c -> c.setMaxVolume(125));
+			}
 		}
 	}
 	
@@ -525,6 +592,18 @@ public class JJack extends Application {
 	public static void setUseProgramPorts(boolean useProgramPorts) {
 		JJack.useProgramPorts = useProgramPorts;
 		
+		if(useProgramPorts) {
+			Map<String, String> props = new HashMap<>();
+			props.put("jjack.program_sink", "true");
+			props.put("jjack.instance_id", INSTANCE_ID.toString());
+			
+			for(PulseAudioSinkInput sI : PulseAudio.getSinkInputs()) {
+				PulseAudioSink programSink = PulseAudio.createSink(sI.getName(), props);
+				PulseAudio.moveSinkInput(sI, programSink);
+			}
+		}else {
+			removeProgramSinks();
+		}
 		// TODO: create/delete program sinks + ports
 	}
 	

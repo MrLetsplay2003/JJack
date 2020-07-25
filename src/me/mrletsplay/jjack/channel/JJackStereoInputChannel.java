@@ -4,6 +4,7 @@ import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ListProperty;
@@ -62,7 +63,7 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	}
 	
 	public void setInputPort(JJackStereoInputPort inputPort) {
-		inputPortProperty.set(inputPort);
+		Platform.runLater(() -> inputPortProperty.set(inputPort));
 	}
 	
 	public JJackStereoInputPort getInputPort() {
@@ -74,7 +75,7 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	}
 	
 	public void setOutputs(List<JJackStereoOutputChannel> outputs) {
-		outputsProperty.setAll(outputs);
+		Platform.runLater(() -> outputsProperty.setAll(outputs));
 	}
 	
 	public List<JJackStereoOutputChannel> getOutputs() {
@@ -83,7 +84,7 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 
 	@Override
 	public void setVolume(double volume) {
-		volumeProperty.set(volume * 100);
+		Platform.runLater(() -> volumeProperty.set(volume * 100));
 	}
 
 	@Override
@@ -182,9 +183,12 @@ public class JJackStereoInputChannel implements JJackInputChannel {
 	@Override
 	public void load(JSONObject object) {
 		JJackInputChannel.super.load(object);
-		getInputPortProperty().set(JJack.getStereoInputPorts().stream()
-				.filter(i -> i.getName().equals(object.getString("input")))
-				.findFirst().orElse(null));
+		
+		synchronized (JJack.getStereoInputPorts()) {
+			getInputPortProperty().set(JJack.getStereoInputPorts().stream()
+					.filter(i -> i.getName().equals(object.getString("input")))
+					.findFirst().orElse(null));
+		}
 		
 		object.getJSONArray("outputs").stream()
 			.map(o -> ((Long) o).intValue())
