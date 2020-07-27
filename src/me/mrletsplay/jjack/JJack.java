@@ -22,7 +22,6 @@ import org.jaudiolibs.jnajack.JackClient;
 import org.jaudiolibs.jnajack.JackException;
 import org.jaudiolibs.jnajack.JackOptions;
 import org.jaudiolibs.jnajack.JackPort;
-import org.jaudiolibs.jnajack.JackPortConnectCallback;
 import org.jaudiolibs.jnajack.JackPortFlags;
 import org.jaudiolibs.jnajack.JackPortRegistrationCallback;
 import org.jaudiolibs.jnajack.JackPortType;
@@ -83,6 +82,7 @@ public class JJack extends Application {
 	
 	private static boolean allowOveramplification;
 	private static boolean useProgramPorts;
+	private static String configOnStartup;
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -219,20 +219,6 @@ public class JJack extends Application {
 						e.printStackTrace();
 					}
 				});
-			}
-		});
-		
-		client.setPortConnectCallback(new JackPortConnectCallback() {
-			
-			@Override
-			public void portsDisconnected(JackClient client, String portName1, String portName2) {
-				
-			}
-			
-			@Override
-			public void portsConnected(JackClient client, String portName1, String portName2) {
-				// TODO Auto-generated method stub
-				
 			}
 		});
 		
@@ -574,6 +560,7 @@ public class JJack extends Application {
 	}
 	
 	public static void setAllowOveramplification(boolean allowOveramplification) {
+		if(JJack.allowOveramplification == allowOveramplification) return;
 		JJack.allowOveramplification = allowOveramplification;
 		
 		synchronized (JJack.getChannels()) {
@@ -590,6 +577,7 @@ public class JJack extends Application {
 	}
 	
 	public static void setUseProgramPorts(boolean useProgramPorts) {
+		if(JJack.useProgramPorts == useProgramPorts) return;
 		JJack.useProgramPorts = useProgramPorts;
 		
 		if(useProgramPorts) {
@@ -604,11 +592,38 @@ public class JJack extends Application {
 		}else {
 			removeProgramSinks();
 		}
-		// TODO: create/delete program sinks + ports
 	}
 	
 	public static boolean isUseProgramPorts() {
 		return useProgramPorts;
+	}
+	
+	public static void setConfigOnStartup(String configOnStartup) {
+		JJack.configOnStartup = configOnStartup;
+	}
+	
+	public static String getConfigOnStartup() {
+		return configOnStartup;
+	}
+	
+	public static void savePreferences(File file) {
+		FileCustomConfig cc = new DefaultFileCustomConfig(file);
+		cc.set("allow-overamplification", allowOveramplification);
+		cc.set("use-program-ports", useProgramPorts);
+		cc.set("config-on-startup", configOnStartup);
+		cc.saveToFile();
+	}
+	
+	public static void loadPreferences(File file) {
+		FileCustomConfig cc = ConfigLoader.loadFileConfig(file);
+		setAllowOveramplification(cc.getBoolean("allow-overamplification"));
+		setUseProgramPorts(cc.getBoolean("use-program-ports"));
+		setConfigOnStartup(cc.getString("config-on-startup"));
+		
+		if(configOnStartup != null) {
+			File f = new File(configOnStartup);
+			if(f.exists() && f.isFile() && f.canRead()) loadConfiguration(f);
+		}
 	}
 
 }
