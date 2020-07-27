@@ -532,8 +532,6 @@ public class JJack extends Application {
 			}
 		}
 		
-		cc.set("preferences.allow-overamplification", allowOveramplification);
-		
 		cc.saveToFile();
 	}
 	
