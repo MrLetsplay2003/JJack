@@ -13,8 +13,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.jaudiolibs.jnajack.Jack;
@@ -78,10 +79,12 @@ public class JJack extends Application {
 	private static ObservableList<JJackStereoInputPort> stereoInputPorts;
 	private static ObservableList<JJackStereoOutputPort> stereoOutputPorts;
 	private static List<JJackChannel> channels;
-	private static ExecutorService executor;
+	private static ScheduledExecutorService executor;
 	
 	private static boolean allowOveramplification;
 	private static boolean useProgramPorts;
+	private static boolean programPortLenient;
+	private static boolean programPortConnectOriginal;
 	private static String configOnStartup;
 	
 	@Override
@@ -100,7 +103,7 @@ public class JJack extends Application {
 				leftoverSinks.forEach(PulseAudio::removeSink);
 		}
 		
-		executor = Executors.newSingleThreadExecutor();
+		executor = Executors.newScheduledThreadPool(1);
 		
 		inputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 		outputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
@@ -249,6 +252,8 @@ public class JJack extends Application {
 		if(config != null) {
 			Platform.runLater(() -> loadConfiguration(new File(config)));
 		}
+		
+		executor.scheduleWithFixedDelay(() -> updateProgramSinks(), 1, 1, TimeUnit.SECONDS);
 	}
 	
 	private static void registerPort(String portName, boolean isOutput) throws JackException {
@@ -386,13 +391,6 @@ public class JJack extends Application {
 		removeProgramSinks();
 		client.close();
 		System.exit(0);
-	}
-	
-	private static void removeProgramSinks() {
-		PulseAudio.getSinks().stream()
-			.filter(s -> Objects.equals(s.getProperty("jjack.program_sink"), "true")
-					&& Objects.equals(s.getProperty("jjack.instance_id"), INSTANCE_ID.toString()))
-			.forEach(PulseAudio::removeSink);
 	}
 	
 	public static JackClient getClient() {
@@ -579,21 +577,79 @@ public class JJack extends Application {
 		JJack.useProgramPorts = useProgramPorts;
 		
 		if(useProgramPorts) {
-			Map<String, String> props = new HashMap<>();
-			props.put("jjack.program_sink", "true");
-			props.put("jjack.instance_id", INSTANCE_ID.toString());
-			
-			for(PulseAudioSinkInput sI : PulseAudio.getSinkInputs()) {
-				PulseAudioSink programSink = PulseAudio.createSink(sI.getName(), props);
-				PulseAudio.moveSinkInput(sI, programSink);
-			}
+			updateProgramSinks();
 		}else {
 			removeProgramSinks();
 		}
 	}
 	
+	private static void updateProgramSinks() {
+		if(!useProgramPorts) return;
+		
+		Map<String, String> baseProperties = new HashMap<>();
+		baseProperties.put("jjack.program_sink", "true");
+		baseProperties.put("jjack.instance_id", INSTANCE_ID.toString());
+		
+		List<PulseAudioSink> sinks = PulseAudio.getSinks().stream()
+				.filter(s -> "true".equals(s.getProperty("jjack.program_sink"))
+						&& INSTANCE_ID.toString().equals(s.getProperty("jjack.instance_id")))
+				.collect(Collectors.toList());
+		
+		List<PulseAudioSink> remainingSinks = new ArrayList<>();
+		
+		for(PulseAudioSinkInput sI : PulseAudio.getSinkInputs()) {
+			PulseAudioSink rSink = sinks.stream()
+					.filter(s -> s.getIndex() == sI.getSink()
+							&& (programPortLenient || String.valueOf(sI.getIndex()).equals(s.getProperty("jjack.input_index"))))
+					.findFirst().orElse(null);
+			
+			if(rSink == null) { // A new program appeared
+				Map<String, String> props = new HashMap<>(baseProperties);
+				props.put("jjack.input_index", String.valueOf(sI.getIndex()));
+				PulseAudioSink programSink = PulseAudio.createSink(sI.getName(), props);
+				
+				if(programPortConnectOriginal) {
+					PulseAudioSink origSink = PulseAudio.getSink(sI.getSink());
+					if(origSink.getJackName() != null) {
+						// TODO: connect ports
+					}
+				}
+				
+				PulseAudio.moveSinkInput(sI, programSink);
+			}else {
+				remainingSinks.add(rSink);
+			}
+		}
+		
+		sinks.removeAll(remainingSinks);
+		sinks.forEach(PulseAudio::removeSink);
+	}
+	
+	private static void removeProgramSinks() {
+		PulseAudio.getSinks().stream()
+			.filter(s -> Objects.equals(s.getProperty("jjack.program_sink"), "true")
+					&& Objects.equals(s.getProperty("jjack.instance_id"), INSTANCE_ID.toString()))
+			.forEach(PulseAudio::removeSink);
+	}
+	
 	public static boolean isUseProgramPorts() {
 		return useProgramPorts;
+	}
+	
+	public static void setProgramPortLenient(boolean programPortLenient) {
+		JJack.programPortLenient = programPortLenient;
+	}
+	
+	public static boolean isProgramPortLenient() {
+		return programPortLenient;
+	}
+	
+	public static void setProgramPortConnectOriginal(boolean programPortConnectOriginal) {
+		JJack.programPortConnectOriginal = programPortConnectOriginal;
+	}
+	
+	public static boolean isProgramPortConnectOriginal() {
+		return programPortConnectOriginal;
 	}
 	
 	public static void setConfigOnStartup(String configOnStartup) {
@@ -608,6 +664,7 @@ public class JJack extends Application {
 		FileCustomConfig cc = new DefaultFileCustomConfig(file);
 		cc.set("allow-overamplification", allowOveramplification);
 		cc.set("use-program-ports", useProgramPorts);
+		cc.set("program-port-lenient", programPortLenient);
 		cc.set("config-on-startup", configOnStartup);
 		cc.saveToFile();
 	}
@@ -615,6 +672,7 @@ public class JJack extends Application {
 	public static void loadPreferences(File file) {
 		FileCustomConfig cc = ConfigLoader.loadFileConfig(file);
 		setAllowOveramplification(cc.getBoolean("allow-overamplification"));
+		setProgramPortLenient(cc.getBoolean("program-port-lenient"));
 		setUseProgramPorts(cc.getBoolean("use-program-ports"));
 		setConfigOnStartup(cc.getString("config-on-startup"));
 		

@@ -16,14 +16,16 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <CheckBox fx:id="allowOveramplification" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Allow higher over-amplification (may result in clipping)" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
-                        <CheckBox fx:id="useProgramPorts" layoutX="24.0" layoutY="24.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Move program outputs to separate ports (may break other JJack instances)" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="35.0" />
-                        <TextField fx:id="loadConfig" layoutX="168.0" layoutY="70.0" prefHeight="26.0" prefWidth="441.0" AnchorPane.leftAnchor="168.0" AnchorPane.rightAnchor="111.0" AnchorPane.topAnchor="70.0" />
-                        <Label layoutX="14.0" layoutY="75.0" text="Load config on startup" AnchorPane.topAnchor="75.0" />
-                        <Button layoutX="653.0" layoutY="70.0" mnemonicParsing="false" onAction="#loadConfigBrowse" text="Browse" AnchorPane.rightAnchor="40.0" />
-                        <Button layoutX="680.0" layoutY="70.0" mnemonicParsing="false" onAction="#loadConfigClear" text="x" AnchorPane.rightAnchor="10.0" />
+                        <CheckBox fx:id="allowOveramplification" layoutX="14.0" layoutY="14.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Allow higher over-amplification (may result in clipping)" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="45.0" />
+                        <CheckBox fx:id="useProgramPorts" layoutX="24.0" layoutY="24.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Move program outputs to separate ports (experimental, may break other JJack instances)" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="70.0" />
+                        <TextField fx:id="loadConfig" layoutX="168.0" layoutY="70.0" prefHeight="26.0" prefWidth="441.0" AnchorPane.leftAnchor="168.0" AnchorPane.rightAnchor="111.0" AnchorPane.topAnchor="10.0" />
+                        <Label layoutX="14.0" layoutY="384.0" text="Load config on startup" AnchorPane.topAnchor="15.0" />
+                        <Button layoutX="653.0" layoutY="70.0" mnemonicParsing="false" onAction="#loadConfigBrowse" text="Browse" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="10.0" />
+                        <Button layoutX="680.0" layoutY="70.0" mnemonicParsing="false" onAction="#loadConfigClear" text="x" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
                         <Button layoutX="647.0" layoutY="405.0" mnemonicParsing="false" onAction="#apply" text="Apply" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" />
                         <Button layoutX="583.0" layoutY="409.0" mnemonicParsing="false" onAction="#cancel" text="Cancel" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="70.0" />
+                        <CheckBox fx:id="programPortLenient" layoutX="44.0" layoutY="98.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Use lenient port matching (Do not force a new port if a program already uses another port)" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="95.0" />
+                        <CheckBox fx:id="programPortConnectOriginal" layoutX="44.0" layoutY="125.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Connect program ports to original outputs (Only works if the sink already was a Jack sink)" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="120.0" />
                      </children></AnchorPane>
             </content>
           </Tab>

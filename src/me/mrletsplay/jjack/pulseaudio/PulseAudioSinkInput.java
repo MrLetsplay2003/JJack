@@ -39,7 +39,7 @@ public class PulseAudioSinkInput {
 	}
 	
 	public String getName() {
-		return getProperty("media.name") != null ? getProperty("media.name") + (getProperty("application.name") != null ? " (" + getProperty("application.name") + ")" : ""): getProcessBinary();
+		return getProperty("media.name") != null ? getProperty("media.name") + (getProperty("application.name") != null ? " (" + getProperty("application.name") + ")" : "") : getProcessBinary();
 	}
 	
 }

@@ -25,6 +25,12 @@ public class JJackPreferencesController {
 
     @FXML
     private CheckBox useProgramPorts;
+
+    @FXML
+    private CheckBox programPortLenient;
+
+    @FXML
+    private CheckBox programPortConnectOriginal;
     
     @FXML
     private TextField loadConfig;
@@ -35,6 +41,8 @@ public class JJackPreferencesController {
     	
     	allowOveramplification.setSelected(JJack.isAllowOveramplification());
     	useProgramPorts.setSelected(JJack.isUseProgramPorts());
+    	programPortLenient.setSelected(JJack.isProgramPortLenient());
+    	programPortConnectOriginal.setSelected(JJack.isProgramPortConnectOriginal());
     	loadConfig.setText(JJack.getConfigOnStartup() == null ? "" : JJack.getConfigOnStartup());
     }
     
@@ -57,6 +65,8 @@ public class JJackPreferencesController {
     void apply(ActionEvent event) {
 		JJack.setAllowOveramplification(allowOveramplification.isSelected());
 		JJack.setUseProgramPorts(useProgramPorts.isSelected());
+		JJack.setProgramPortLenient(programPortLenient.isSelected());
+		JJack.setProgramPortConnectOriginal(programPortConnectOriginal.isSelected());
 		JJack.setConfigOnStartup(loadConfig.getText().isBlank() ? null : loadConfig.getText());
 		JJack.savePreferences(PREFERENCES_FILE);
     	JJack.preferencesStage.hide();
