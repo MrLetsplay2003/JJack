@@ -8,10 +8,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,6 +54,7 @@ import me.mrletsplay.jjack.channel.JJackSingleOutputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoInputChannel;
 import me.mrletsplay.jjack.channel.JJackStereoOutputChannel;
 import me.mrletsplay.jjack.controller.JJackController;
+import me.mrletsplay.jjack.controller.JJackPreferencesController;
 import me.mrletsplay.jjack.port.JJackInputPort;
 import me.mrletsplay.jjack.port.JJackOutputPort;
 import me.mrletsplay.jjack.port.stereo.JJackStereoInputPort;
@@ -63,14 +66,18 @@ import me.mrletsplay.mrcore.config.ConfigLoader;
 import me.mrletsplay.mrcore.config.FileCustomConfig;
 import me.mrletsplay.mrcore.config.impl.DefaultFileCustomConfig;
 import me.mrletsplay.mrcore.json.JSONObject;
-
 public class JJack extends Application {
 	
 	public static final String JACK_CLIENT_NAME = "JJack";
 	public static final UUID INSTANCE_ID = UUID.randomUUID();
 	
-	public static Stage stage;
-	public static Stage preferencesStage;
+	public static final double
+		MAX_VOLUME_DEFAULT = 125,
+		MAX_VOLUME_OVERAMPLIFICATION = 150;
+	
+	public static Stage
+		stage,
+		preferencesStage;
 	
 	private static JackClient client;
 	private static JJackController controller;
@@ -81,10 +88,16 @@ public class JJack extends Application {
 	private static List<JJackChannel> channels;
 	private static ScheduledExecutorService executor;
 	
-	private static boolean allowOveramplification;
-	private static boolean useProgramPorts;
-	private static boolean programPortLenient;
-	private static boolean programPortConnectOriginal;
+	private static Map<String, String> pendingProgramPorts = new HashMap<>();
+	
+	private static boolean
+		allowOveramplification,
+		useProgramPorts,
+		programPortLenient,
+		programPortConnectOriginal,
+		programPortCheckProcessAlive,
+		programPortByPID;
+	
 	private static String configOnStartup;
 	
 	@Override
@@ -111,6 +124,8 @@ public class JJack extends Application {
 		stereoOutputPorts = FXCollections.synchronizedObservableList(FXCollections.observableArrayList());
 		channels = Collections.synchronizedList(new ArrayList<>());
 		
+		client = Jack.getInstance().openClient(JACK_CLIENT_NAME, EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
+		
 		stage = primaryStage;
 		
 		URL iconURL = JJack.class.getResource("/include/icon.png");
@@ -136,6 +151,7 @@ public class JJack extends Application {
 		if(prefsURL == null) prefsURL = new File("./include/preferences.fxml").toURI().toURL();
 		FXMLLoader prefsL = new FXMLLoader(prefsURL);
 		Parent prefsPr = prefsL.load(prefsURL.openStream());
+		JJackPreferencesController prefsC = prefsL.getController();
 		
 		Scene prefsScene = new Scene(prefsPr, 720, 480);
 		
@@ -144,12 +160,13 @@ public class JJack extends Application {
 		preferencesStage.setScene(prefsScene);
 		preferencesStage.initOwner(JJack.stage);
 		preferencesStage.setResizable(false);
+		preferencesStage.setOnShown(event -> {
+			prefsC.update();
+		});
 		
 		preferencesStage.setOnCloseRequest(e -> {
 			preferencesStage.hide();
 		});
-		
-		client = Jack.getInstance().openClient(JACK_CLIENT_NAME, EnumSet.noneOf(JackOptions.class), EnumSet.noneOf(JackStatus.class));
 		
 		client.setProcessCallback((client, nframes) -> {
 			List<JJackOutputPort> outPorts = new ArrayList<>(getOutputPorts());
@@ -248,6 +265,8 @@ public class JJack extends Application {
 			
 		}.start();
 		
+    	JJack.loadPreferences(JJackPreferencesController.PREFERENCES_FILE);
+		
 		String config = getParameters().getNamed().get("config");
 		if(config != null) {
 			Platform.runLater(() -> loadConfiguration(new File(config)));
@@ -294,8 +313,10 @@ public class JJack extends Application {
 	}
 	
 	private synchronized static void createStereoChannels() {
-		createLeftStereoChannels();
-		createRightStereoChannels();
+		Platform.runLater(() -> {
+			createLeftStereoChannels();
+			createRightStereoChannels();
+		});
 	}
 	
 	private static void createLeftStereoChannels() {
@@ -320,7 +341,8 @@ public class JJack extends Application {
 					continue;
 			}
 			
-			stereoInputPorts.add(new JJackStereoInputPort(ports.get(0), ports.get(1)));
+			JJackStereoInputPort inP = new JJackStereoInputPort(ports.get(0), ports.get(1));
+			stereoInputPorts.add(inP);
 		}
 	}
 	
@@ -345,8 +367,9 @@ public class JJack extends Application {
 							|| (s.getLeft() == ports.get(1) && s.getRight() == ports.get(0))))
 					continue;
 			}
-
-			stereoOutputPorts.add(new JJackStereoOutputPort(ports.get(0), ports.get(1)));
+			
+			JJackStereoOutputPort outP = new JJackStereoOutputPort(ports.get(0), ports.get(1));
+			stereoOutputPorts.add(outP);
 		}
 	}
 	
@@ -452,10 +475,15 @@ public class JJack extends Application {
 		}
 	}
 	
+	private static double getMaxVolume() {
+		return allowOveramplification ? MAX_VOLUME_OVERAMPLIFICATION : MAX_VOLUME_DEFAULT;
+	}
+	
 	public static JJackSingleInputChannel createSingleInputChannel(int id) {
 		JJackSingleInputChannel ch = new JJackSingleInputChannel(id);
 		channels.add(ch);
 		controller.addSingleInputChannel(ch);
+		ch.setMaxVolume(getMaxVolume());
 		return ch;
 	}
 	
@@ -467,6 +495,7 @@ public class JJack extends Application {
 		JJackSingleOutputChannel ch = new JJackSingleOutputChannel(id);
 		channels.add(ch);
 		controller.addSingleOutputChannel(ch);
+		ch.setMaxVolume(getMaxVolume());
 		return ch;
 	}
 	
@@ -478,6 +507,7 @@ public class JJack extends Application {
 		JJackSingleComboChannel ch = new JJackSingleComboChannel(id);
 		channels.add(ch);
 		controller.addSingleComboChannel(ch);
+		ch.setMaxVolume(getMaxVolume());
 		return ch;
 	}
 	
@@ -489,6 +519,7 @@ public class JJack extends Application {
 		JJackStereoInputChannel ch = new JJackStereoInputChannel(id);
 		channels.add(ch);
 		controller.addStereoInputChannel(ch);
+		ch.setMaxVolume(getMaxVolume());
 		return ch;
 	}
 	
@@ -500,6 +531,7 @@ public class JJack extends Application {
 		JJackStereoOutputChannel ch = new JJackStereoOutputChannel(id);
 		channels.add(ch);
 		controller.addStereoOutputChannel(ch);
+		ch.setMaxVolume(getMaxVolume());
 		return ch;
 	}
 	
@@ -561,9 +593,9 @@ public class JJack extends Application {
 		
 		synchronized (JJack.getChannels()) {
 			if(allowOveramplification) {
-				JJack.getChannels().forEach(c -> c.setMaxVolume(150));
+				JJack.getChannels().forEach(c -> c.setMaxVolume(MAX_VOLUME_OVERAMPLIFICATION));
 			}else {
-				JJack.getChannels().forEach(c -> c.setMaxVolume(125));
+				JJack.getChannels().forEach(c -> c.setMaxVolume(MAX_VOLUME_DEFAULT));
 			}
 		}
 	}
@@ -595,7 +627,9 @@ public class JJack extends Application {
 						&& INSTANCE_ID.toString().equals(s.getProperty("jjack.instance_id")))
 				.collect(Collectors.toList());
 		
-		List<PulseAudioSink> remainingSinks = new ArrayList<>();
+		List<PulseAudioSink> allSinks = new ArrayList<>(sinks);
+		
+		Set<PulseAudioSink> remainingSinks = new HashSet<>();
 		
 		for(PulseAudioSinkInput sI : PulseAudio.getSinkInputs()) {
 			PulseAudioSink rSink = sinks.stream()
@@ -604,15 +638,28 @@ public class JJack extends Application {
 					.findFirst().orElse(null);
 			
 			if(rSink == null) { // A new program appeared
+				if(programPortByPID) {
+					PulseAudioSink pSink = allSinks.stream()
+							.filter(s -> sI.getProperty("application.process.id").equals(s.getProperty("jjack.input_process_id")))
+							.findFirst().orElse(null);
+					
+					if(pSink != null) {
+						remainingSinks.add(pSink);
+						PulseAudio.moveSinkInput(sI, pSink);
+						continue;
+					}
+				}
+				
 				Map<String, String> props = new HashMap<>(baseProperties);
 				props.put("jjack.input_index", String.valueOf(sI.getIndex()));
+				props.put("jjack.input_process_id", String.valueOf(sI.getProperty("application.process.id")));
 				PulseAudioSink programSink = PulseAudio.createSink(sI.getName(), props);
+				allSinks.add(programSink);
 				
 				if(programPortConnectOriginal) {
 					PulseAudioSink origSink = PulseAudio.getSink(sI.getSink());
-					if(origSink.getJackName() != null) {
-						// TODO: connect ports
-					}
+					if(origSink.getJackName() != null)
+						pendingProgramPorts.put(programSink.getJackName(), origSink.getJackName());
 				}
 				
 				PulseAudio.moveSinkInput(sI, programSink);
@@ -622,7 +669,44 @@ public class JJack extends Application {
 		}
 		
 		sinks.removeAll(remainingSinks);
-		sinks.forEach(PulseAudio::removeSink);
+		sinks.forEach(sink -> {
+			if(programPortCheckProcessAlive) {
+				try {
+					if(ProcessHandle.of(Integer.parseInt(sink.getProperty("jjack.input_process_id"))).isPresent())
+						return;
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			PulseAudio.removeSink(sink);
+		});
+		
+		if(programPortConnectOriginal && !pendingProgramPorts.isEmpty()) {
+			for(String k : new ArrayList<>(pendingProgramPorts.keySet())) {
+				String it = pendingProgramPorts.get(k);
+				
+				JJackStereoInputPort inP = stereoInputPorts.stream()
+						.filter(ip -> ip.getName().equals(it))
+						.findFirst().orElse(null);
+				
+				if(inP == null) continue;
+
+				try {
+					List<String> outPorts = Arrays.stream(Jack.getInstance().getPorts(JJack.client, null, JackPortType.AUDIO, EnumSet.of(JackPortFlags.JackPortIsOutput)))
+							.filter(s -> s.startsWith(k + ":"))
+							.collect(Collectors.toList());
+					
+					if(outPorts.size() == 2) {
+						Jack.getInstance().connect(JJack.client, outPorts.get(0), inP.getLeft().getJackPort().getName());
+						Jack.getInstance().connect(JJack.client, outPorts.get(1), inP.getRight().getJackPort().getName());
+						pendingProgramPorts.remove(k);
+					}
+				}catch(JackException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 	
 	private static void removeProgramSinks() {
@@ -652,6 +736,22 @@ public class JJack extends Application {
 		return programPortConnectOriginal;
 	}
 	
+	public static void setProgramPortCheckProcessAlive(boolean programPortCheckProcessAlive) {
+		JJack.programPortCheckProcessAlive = programPortCheckProcessAlive;
+	}
+	
+	public static boolean isProgramPortCheckProcessAlive() {
+		return programPortCheckProcessAlive;
+	}
+	
+	public static void setProgramPortByPID(boolean programPortByPID) {
+		JJack.programPortByPID = programPortByPID;
+	}
+	
+	public static boolean isProgramPortByPID() {
+		return programPortByPID;
+	}
+	
 	public static void setConfigOnStartup(String configOnStartup) {
 		JJack.configOnStartup = configOnStartup;
 	}
@@ -665,6 +765,9 @@ public class JJack extends Application {
 		cc.set("allow-overamplification", allowOveramplification);
 		cc.set("use-program-ports", useProgramPorts);
 		cc.set("program-port-lenient", programPortLenient);
+		cc.set("program-port-connect-original", programPortConnectOriginal);
+		cc.set("program-port-check-process-alive", programPortCheckProcessAlive);
+		cc.set("program-port-by-pid", programPortByPID);
 		cc.set("config-on-startup", configOnStartup);
 		cc.saveToFile();
 	}
@@ -672,7 +775,10 @@ public class JJack extends Application {
 	public static void loadPreferences(File file) {
 		FileCustomConfig cc = ConfigLoader.loadFileConfig(file);
 		setAllowOveramplification(cc.getBoolean("allow-overamplification"));
-		setProgramPortLenient(cc.getBoolean("program-port-lenient"));
+		setProgramPortLenient(cc.getBoolean("program-port-lenient", true, false));
+		setProgramPortConnectOriginal(cc.getBoolean("program-port-connect-original", true, false));
+		setProgramPortCheckProcessAlive(cc.getBoolean("program-port-check-process-alive", true, false));
+		setProgramPortByPID(cc.getBoolean("program-port-by-pid", true, false));
 		setUseProgramPorts(cc.getBoolean("use-program-ports"));
 		setConfigOnStartup(cc.getString("config-on-startup"));
 		
