@@ -8,6 +8,8 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
 import me.mrletsplay.jjack.JJack;
 
 public class JJackPreferencesController {
@@ -57,7 +59,12 @@ public class JJackPreferencesController {
     
     @FXML
     void loadConfigBrowse(ActionEvent event) {
-    	
+    	FileChooser chooser = new FileChooser();
+		chooser.setInitialDirectory(new File("."));
+		chooser.getExtensionFilters().add(new ExtensionFilter("Yaml Configuration file", "*.yml", "*.yaml"));
+		File f = chooser.showOpenDialog(JJack.preferencesStage);
+		if(f == null) return;
+		loadConfig.setText(f.getAbsolutePath());
     }
     
     @FXML

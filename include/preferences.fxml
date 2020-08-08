@@ -41,11 +41,7 @@
                               <Tooltip text="Ports will only be removed if the process that created the port has exited and nothing else is using the port" />
                            </tooltip>
                         </CheckBox>
-                        <CheckBox fx:id="programPortByPID" layoutX="44.0" layoutY="174.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Assign all outputs of a process to the same port" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="170.0">
-                           <tooltip>
-                              <Tooltip text="Ports will only be removed if the process that created the port has exited and nothing else is using the port" />
-                           </tooltip>
-                        </CheckBox>
+                        <CheckBox fx:id="programPortByPID" layoutX="44.0" layoutY="174.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="689.0" text="Assign all outputs of a process to the same port" AnchorPane.leftAnchor="45.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="170.0" />
                      </children></AnchorPane>
             </content>
           </Tab>
